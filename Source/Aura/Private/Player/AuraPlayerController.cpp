@@ -17,7 +17,6 @@ AAuraPlayerController::AAuraPlayerController()
 void AAuraPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-
 	check(AuraContext);
 
 	UEnhancedInputLocalPlayerSubsystem* Subsystem =
@@ -33,16 +32,11 @@ void AAuraPlayerController::BeginPlay()
 	InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	InputModeData.SetHideCursorDuringCapture(false);
 	SetInputMode(InputModeData);
-
-
-
-
 }
 
 void AAuraPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
-
 	UEnhancedInputComponent* EnhnaInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent);
 
 	EnhnaInputComponent->BindAction(
