@@ -1,7 +1,6 @@
 # Aura - UE5 Top-Down RPG (Gameplay Ability System)
 
 Unreal Engine 5 기반의 탑다운 RPG 프로젝트입니다.
-Stephen Ulibarri의 **"Unreal Engine 5 - Gameplay Ability System - Top Down RPG"** 강의를 따라 제작하며,
 GAS(Gameplay Ability System)를 활용한 AAA급 코드 아키텍처를 학습하는 것이 목표입니다.
 
 ---
@@ -125,9 +124,4 @@ git lfs track "*.umap"
 > LFS 사용 시 `.gitattributes`의 binary 라인을 LFS filter로 교체
 
 ---
-
-## 참고
-
 - 강의: *Unreal Engine 5 - Gameplay Ability System - Top Down RPG* by Stephen Ulibarri
-- 코드 원칙: SOLID, Blueprint/C++ 50:50 비율
-- 대상: Unreal Engine C++ 기초 이상의 개발자
