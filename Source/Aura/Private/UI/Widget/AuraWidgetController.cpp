@@ -10,3 +10,7 @@ void UAuraWidgetController::SetWidgetControllerParms(const FWidgetControllerPara
 	AbilitySystemComponent = WCParams.AbilitySystemComponent;
 	AttributeSet = WCParams.AttributeSet;
 }
+
+void UAuraWidgetController::BroadcastInitialValves()
+{
+}
