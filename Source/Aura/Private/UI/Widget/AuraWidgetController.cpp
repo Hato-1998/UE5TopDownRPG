@@ -14,3 +14,7 @@ void UAuraWidgetController::SetWidgetControllerParms(const FWidgetControllerPara
 void UAuraWidgetController::BroadcastInitialValves()
 {
 }
+
+void UAuraWidgetController::BindCallbacksToDependencies()
+{
+}
