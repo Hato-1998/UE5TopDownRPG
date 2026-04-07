@@ -50,7 +50,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetWidgetControllerParms(const FWidgetControllerParams& WCParms);
 
-	virtual void BroadcastInitialValves();
+	virtual void BroadcastInitialValues();
 	virtual void BindCallbacksToDependencies();
 protected:
 

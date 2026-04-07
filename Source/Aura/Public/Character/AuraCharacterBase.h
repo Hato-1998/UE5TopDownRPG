@@ -33,7 +33,7 @@ protected:
 
 	void InitializePrimaryAttributes() const;
 
-	UPROPERTY(EditAnywhere, Category = "ComBat")
+	UPROPERTY(EditAnywhere, Category = "Combat")
 	TObjectPtr<USkeletalMeshComponent> Weapon;
 
 	UPROPERTY()
@@ -44,5 +44,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "AbilitySystem")
 	TSubclassOf<UGameplayEffect> DefaultPrimaryAttributes;
+
+	UPROPERTY(EditAnywhere, Category = "AbilitySystem")
+	TSubclassOf<UGameplayEffect> DefaultSecondaryAttributes;
 public:
 };

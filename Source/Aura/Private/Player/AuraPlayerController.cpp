@@ -43,9 +43,9 @@ void AAuraPlayerController::BeginPlay()
 void AAuraPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
-	UEnhancedInputComponent* EnhnaInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent);
+	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent);
 
-	EnhnaInputComponent->BindAction(
+	EnhancedInputComponent->BindAction(
 		MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::Move);
 }
 
