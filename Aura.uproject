@@ -31,6 +31,22 @@
 		{
 			"Name": "Aura",
 			"Enabled": false
+		},
+		{
+			"Name": "RemoteControl",
+			"Enabled": true
+		},
+		{
+			"Name": "RemoteControlWebInterface",
+			"Enabled": true
+		},
+		{
+			"Name": "PythonScriptPlugin",
+			"Enabled": true
+		},
+		{
+			"Name": "WebAPI",
+			"Enabled": true
 		}
 	]
 }

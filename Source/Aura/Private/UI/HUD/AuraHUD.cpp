@@ -8,15 +8,12 @@
 
 UOverlayWidgetController* AAuraHUD::GetOverlayWidgetController(const FWidgetControllerParams& WCParams)
 {
-	if (OverlayWidgetController == nullptr)
-	{
-		OverlayWidgetController = NewObject<UOverlayWidgetController>(this, OverlayWidgetControllerClass);
-		OverlayWidgetController->SetWidgetControllerParms(WCParams);
-		OverlayWidgetController->BindCallbacksToDependencies();
+	return GetOrCreateWidgetController(OverlayWidgetController, OverlayWidgetControllerClass, WCParams);
+}
 
-	}
-
-	return OverlayWidgetController;
+UAttributeWidgetMenuController* AAuraHUD::GetAttributeWidgetMenuController(const FWidgetControllerParams& WCParams)
+{
+	return GetOrCreateWidgetController(AttributeMenuWidgetController, AttributeMenuWidgetControllerClass, WCParams);
 }
 
 void AAuraHUD::InitOverlay(APlayerController* PC, APlayerState* PS, UAbilitySystemComponent* ASC, UAttributeSet* AS)
