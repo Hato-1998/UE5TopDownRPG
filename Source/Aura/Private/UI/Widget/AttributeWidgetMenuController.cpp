@@ -8,10 +8,6 @@
 
 void UAttributeWidgetMenuController::BroadcastInitialValues()
 {
-}
-
-void UAttributeWidgetMenuController::BindCallbacksToDependencies()
-{
 	UAuraAttributeSet* AS = Cast<UAuraAttributeSet>(AttributeSet);
 
 	check(AttributeInfo);
@@ -20,5 +16,10 @@ void UAttributeWidgetMenuController::BindCallbacksToDependencies()
 		FAuraGameplayTags::Get().Attribute_Primary_Strength);
 	Info.AttributeValue = AS->GetStrength();
 
+
 	AttributeInfoDelegate.Broadcast(Info);
+}
+
+void UAttributeWidgetMenuController::BindCallbacksToDependencies()
+{
 }
