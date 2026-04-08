@@ -48,5 +48,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "AbilitySystem")
 	TSubclassOf<UGameplayEffect> DefaultSecondaryAttributes;
+
+	UPROPERTY(EditAnywhere, Category = "AbilitySystem")
+	TSubclassOf<UGameplayEffect> DefaultVitalAttributes;
 public:
 };
