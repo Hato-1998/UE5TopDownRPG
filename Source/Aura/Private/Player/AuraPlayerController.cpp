@@ -3,6 +3,7 @@
 
 #include "Player/AuraPlayerController.h"
 #include "Character/AuraCharacter.h"
+#include "Interaction/HighLightInterface.h"
 
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"

@@ -5,9 +5,6 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
 #include "GameFramework/Character.h"
-
-#include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AbilitySystem/AuraAttributeSet.h"
 #include "Interaction/CombatInterface.h"
 
 #include "AuraCharacterBase.generated.h"

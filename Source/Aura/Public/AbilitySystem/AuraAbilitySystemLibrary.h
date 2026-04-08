@@ -4,11 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "UI/Widget/OverlayWidgetController.h"
-#include "UI/Widget/AuraWidgetController.h"
 #include "AuraAbilitySystemLibrary.generated.h"
 
 class AAuraHUD;
+class UOverlayWidgetController;
+class UAttributeWidgetMenuController;
+struct FWidgetControllerParams;
 
 /**
  *

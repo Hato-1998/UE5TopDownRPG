@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "Interaction/HighLightInterface.h"
 #include "AuraPlayerController.generated.h"
 
 class UInputMappingContext;

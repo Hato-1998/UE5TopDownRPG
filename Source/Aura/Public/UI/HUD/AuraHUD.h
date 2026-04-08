@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
-#include "UI/Widget/AttributeWidgetMenuController.h"
 #include "AuraHUD.generated.h"
 
 class UAttributeSet;
 class UAbilitySystemComponent;
 class UAuraUserWidget;
 class UOverlayWidgetController;
+class UAttributeWidgetMenuController;
 struct FWidgetControllerParams;
 
 

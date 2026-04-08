@@ -5,6 +5,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "Player/AuraPlayerState.h"
 #include "UI/HUD/AuraHUD.h"
+#include "UI/Widget/AuraWidgetController.h"
+#include "UI/Widget/OverlayWidgetController.h"
+#include "UI/Widget/AttributeWidgetMenuController.h"
 
 bool UAuraAbilitySystemLibrary::MakeWidgetControllerParams(const UObject* WorldContextObject, FWidgetControllerParams& OutParams, AAuraHUD*& OutHUD)
 {
