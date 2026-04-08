@@ -20,14 +20,14 @@ AAuraEffectActor::AAuraEffectActor()
 void AAuraEffectActor::BeginPlay()
 {
 	Super::BeginPlay();
-
+	// 블루프린트에서 오버라이드하여 초기화 로직 추가 가능
 }
 
  void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const TSubclassOf<UGameplayEffect>& GameplayEffectClass)
 {
 	//인터페이스를 통해 컴포넌트를 연결시키는 방식도 있음, 라이브러리를 통할지, 액터마다 인터페이스를 만들지는 프로젝트마다 다름
 	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor);
-	if (TargetASC == nullptr) return;
+	if (!IsValid(TargetASC)) return;
 
 	check(GameplayEffectClass)
 	FGameplayEffectContextHandle EffectContext = TargetASC->MakeEffectContext();
@@ -44,40 +44,32 @@ void AAuraEffectActor::BeginPlay()
 	}
 }
 
-void AAuraEffectActor::OnOverlap(AActor* TargetActor)
+void AAuraEffectActor::ApplyEffectsForPolicy(AActor* TargetActor, EEffectApplicationPolicy PolicyToMatch)
 {
-	if (InstantEffectApplicationPolicy == EEffectApplicationPolicy::ApplyOnOverlap)
+	if (InstantEffectApplicationPolicy == PolicyToMatch)
 	{
 		ApplyEffectToTarget(TargetActor, InstantGamePlayEffectClass);
 	}
 
-	if (DurationEffectApplicationPolicy == EEffectApplicationPolicy::ApplyOnOverlap)
+	if (DurationEffectApplicationPolicy == PolicyToMatch)
 	{
 		ApplyEffectToTarget(TargetActor, DurationGamePlayEffectClass);
 	}
 
-	if (InfinityEffectApplicationPolicy == EEffectApplicationPolicy::ApplyOnOverlap)
+	if (InfinityEffectApplicationPolicy == PolicyToMatch)
 	{
 		ApplyEffectToTarget(TargetActor, InfinityGamePlayEffectClass);
 	}
 }
 
+void AAuraEffectActor::OnOverlap(AActor* TargetActor)
+{
+	ApplyEffectsForPolicy(TargetActor, EEffectApplicationPolicy::ApplyOnOverlap);
+}
+
 void AAuraEffectActor::OnEndOverlap(AActor* TargetActor)
 {
-	if (InstantEffectApplicationPolicy == EEffectApplicationPolicy::ApplyOnEndOverlap)
-	{
-		ApplyEffectToTarget(TargetActor, InstantGamePlayEffectClass);
-	}
-
-	if (DurationEffectApplicationPolicy == EEffectApplicationPolicy::ApplyOnEndOverlap)
-	{
-		ApplyEffectToTarget(TargetActor, DurationGamePlayEffectClass);
-	}
-
-	if (InfinityEffectApplicationPolicy == EEffectApplicationPolicy::ApplyOnEndOverlap)
-	{
-		ApplyEffectToTarget(TargetActor, InfinityGamePlayEffectClass);
-	}
+	ApplyEffectsForPolicy(TargetActor, EEffectApplicationPolicy::ApplyOnEndOverlap);
 
 	if (InfinityEffectRemovePolicy == EEffectRemovePolicy::RemoveOnEndOverlap)
 	{

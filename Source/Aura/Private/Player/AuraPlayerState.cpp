@@ -32,5 +32,5 @@ UAbilitySystemComponent* AAuraPlayerState::GetAbilitySystemComponent() const
 
 void AAuraPlayerState::OnRep_Level(int32 OldLevel)
 {
-
+	// TODO: Level 변경 시 UI 업데이트 또는 델리게이트 브로드캐스트 구현 필요
 }
