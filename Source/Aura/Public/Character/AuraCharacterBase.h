@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
+#include "Abilities/GameplayAbility.h"
 #include "GameFramework/Character.h"
 #include "Interaction/CombatInterface.h"
 
@@ -48,5 +49,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "AbilitySystem")
 	TSubclassOf<UGameplayEffect> DefaultVitalAttributes;
-public:
+
+	void AddCharacterAbilities() const;
+private:
+
+	UPROPERTY(EditAnywhere, Category = "Abilities")
+	TArray<TSubclassOf<UGameplayAbility>> StartupAbilities;
 };
