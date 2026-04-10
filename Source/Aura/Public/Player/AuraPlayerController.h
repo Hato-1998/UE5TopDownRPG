@@ -4,12 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "GameplayTagContainer.h"
 #include "AuraPlayerController.generated.h"
 
+class UAuraAbilitySystemComponent;
+class UAuraInputConfig;
 class UInputMappingContext;
 class UInputAction;
 class IHighLightInterface;
-
 struct FInputActionValue;
 
 UCLASS()
@@ -38,4 +40,16 @@ private:
 
 	TScriptInterface<IHighLightInterface> LastActor;
 	TScriptInterface<IHighLightInterface> ThisActor;
+
+	void AbilityInputTagPressed(const FGameplayTag Tag);
+	void AbilityInputTagReleased(const FGameplayTag Tag);
+	void AbilityInputTagHeld(const FGameplayTag Tag);
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UAuraInputConfig> InputConfig;
+
+	UPROPERTY()
+	TObjectPtr<UAuraAbilitySystemComponent> AuraAbilitySystemComponent;
+
+	UAuraAbilitySystemComponent* GetAuraASC();
 };

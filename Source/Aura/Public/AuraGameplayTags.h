@@ -36,6 +36,13 @@ public:
 	FGameplayTag Attribute_Vital_Health;
 	FGameplayTag Attribute_Vital_Mana;
 
+	FGameplayTag InputTag_LMB;
+	FGameplayTag InputTag_RMB;
+	FGameplayTag InputTag_Action1;
+	FGameplayTag InputTag_Action2;
+	FGameplayTag InputTag_Action3;
+	FGameplayTag InputTag_Action4;
+
 protected:
 
 private:

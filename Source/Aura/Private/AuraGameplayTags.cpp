@@ -30,7 +30,8 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 		FName("Attribute.Secondary.Armor"), FString("Reduce Damage Taken, Improves Block Chance"));
 
 	GameplayTags.Attribute_Secondary_ArmorPenetration = UGameplayTagsManager::Get().AddNativeGameplayTag(
-		FName("Attribute.Secondary.ArmorPenetration"), FString("Ignores Percentage of Enemy Armor, Increases Critical Hit Chance"));
+		FName("Attribute.Secondary.ArmorPenetration"),
+		FString("Ignores Percentage of Enemy Armor, Increases Critical Hit Chance"));
 
 	GameplayTags.Attribute_Secondary_BlockChance = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Attribute.Secondary.BlockChance"), FString("Chance to Cut Incoming Damage in Half"));
@@ -64,4 +65,25 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 
 	GameplayTags.Attribute_Vital_Mana = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Attribute.Vital.Mana"), FString("Current Mana of the Character"));
+
+	/*
+	* Input Tag
+	*/
+	GameplayTags.InputTag_LMB = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Input.Mouse.LMB"), FString("Input Tag for Left Mouse Button"));
+
+	GameplayTags.InputTag_RMB = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Input.Mouse.RMB"), FString("Input Tag for Right Mouse Button"));
+
+	GameplayTags.InputTag_Action1 = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Input.Button.Action1"), FString("Input Tag for Action 1"));
+
+	GameplayTags.InputTag_Action2 = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Input.Button.Action2"), FString("Input Tag for Action 2"));
+
+	GameplayTags.InputTag_Action3 = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Input.Button.Action3"), FString("Input Tag for Action 3"));
+
+	GameplayTags.InputTag_Action4 = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Input.Button.Action4"), FString("Input Tag for Action 4"));
 }

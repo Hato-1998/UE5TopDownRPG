@@ -2,11 +2,12 @@
 
 
 #include "Player/AuraPlayerController.h"
-#include "Character/AuraCharacter.h"
-#include "Interaction/HighLightInterface.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
+#include "Interaction/HighLightInterface.h"
 #include "EnhancedInputSubsystems.h"
-#include "EnhancedInputComponent.h"
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
+#include "Input/AuraInputComponent.h"
 
 AAuraPlayerController::AAuraPlayerController()
 {
@@ -32,7 +33,7 @@ void AAuraPlayerController::BeginPlay()
 		Subsystem->AddMappingContext(AuraContext, 0);
 	}
 
-	bShowMouseCursor= true;
+	bShowMouseCursor = true;
 	DefaultMouseCursor = EMouseCursor::Default;
 
 	FInputModeGameAndUI InputModeData;
@@ -44,10 +45,14 @@ void AAuraPlayerController::BeginPlay()
 void AAuraPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
-	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent);
+	UAuraInputComponent* AuraInputComponent = CastChecked<UAuraInputComponent>(InputComponent);
 
-	EnhancedInputComponent->BindAction(
+	AuraInputComponent->BindAction(
 		MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::Move);
+
+	AuraInputComponent->BindAbilityActions(
+		InputConfig, this, &AAuraPlayerController::AbilityInputTagPressed,
+		&AAuraPlayerController::AbilityInputTagReleased, &AAuraPlayerController::AbilityInputTagHeld);
 }
 
 void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
@@ -76,44 +81,36 @@ void AAuraPlayerController::CursorTrace()
 	LastActor = ThisActor;
 	ThisActor = CursorHit.GetActor();
 
-	/**
-	 * HIT된 Actor에 따른 시나리오
-	 * 1. LastActor가 null이고 ThisActor도 null일 경우 (두 액터다 해당 인터페이스를 가지고 있지 않음)
-	 * -> 행동 없음
-	 * 2. LastActor가 null이고 ThisActor가 valid일 경우 (현재 엑터만 해당 인터페이스를 가지고 있음)
-	 * -> ThisActor에 HighLight 실행
-	 * 3. LastActor가 valid이고 ThisActor가 null일 경우 (마우스가 지나간 액터에만 해당 인터페이스를 가지고 있음)
-	 * -> LastActor에 UnHighLight 실행
-	 * 4. LastActor가 Valid이고 ThisActor도 Vaild일 경우 + 두 액터가 다를 경우 (두 액터다 해당 인터페이스를 가지고 있지 않음)
-	 * -> ThisActor에 HighLight 실행, LastActor에 UnHighLight 실행
-	 * 5. LastActor가 Valid이고 ThisActor도 Vaild일 경우 + 두 액터가 같을 경우 (두 액터다 해당 인터페이스를 가지고 있지 않음)
-	 * -> 행동 없음
-	 */
-
-	if (LastActor == nullptr)
+	if (LastActor != ThisActor)
 	{
-		if (ThisActor != nullptr)
-		{
-			// 2번
-			ThisActor->HighLightActor();
-		}
+		if (LastActor) LastActor->UnHighLightActor();
+		if (ThisActor) ThisActor->HighLightActor();
 	}
-	else
-	{
-		if (ThisActor == nullptr)
-		{
-			// 3번
-			LastActor->UnHighLightActor();
-		}
-		else
-		{
-			if (LastActor != ThisActor)
-			{
-				// 4번
-				LastActor->UnHighLightActor();
-				ThisActor->HighLightActor();
-			}
-		}
-	}
+}
 
+void AAuraPlayerController::AbilityInputTagPressed(const FGameplayTag Tag)
+{
+
+}
+
+void AAuraPlayerController::AbilityInputTagReleased(const FGameplayTag Tag)
+{
+	if (GetAuraASC() == nullptr) return;
+	GetAuraASC()->AbilityInputTagReleased(Tag);
+}
+
+void AAuraPlayerController::AbilityInputTagHeld(const FGameplayTag Tag)
+{
+	if (GetAuraASC() == nullptr) return;
+	GetAuraASC()->AbilityInputTagHeld(Tag);
+}
+
+UAuraAbilitySystemComponent* AAuraPlayerController::GetAuraASC()
+{
+	if (AuraAbilitySystemComponent == nullptr)
+	{
+		AuraAbilitySystemComponent = Cast<UAuraAbilitySystemComponent>(
+			UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetPawn<APawn>()));
+	}
+	return AuraAbilitySystemComponent;
 }
