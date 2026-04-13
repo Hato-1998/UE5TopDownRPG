@@ -42,6 +42,7 @@ private:
 
 	TScriptInterface<IHighLightInterface> LastActor;
 	TScriptInterface<IHighLightInterface> ThisActor;
+	FHitResult CursorHit;
 
 	void AbilityInputTagPressed(const FGameplayTag Tag);
 	void AbilityInputTagReleased(const FGameplayTag Tag);

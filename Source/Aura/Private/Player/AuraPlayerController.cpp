@@ -82,7 +82,6 @@ void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 
 void AAuraPlayerController::CursorTrace()
 {
-	FHitResult CursorHit;
 	GetHitResultUnderCursor(
 		ECC_Visibility, false, CursorHit);
 	if (!CursorHit.bBlockingHit) return;
@@ -129,7 +128,6 @@ void AAuraPlayerController::AbilityInputTagReleased(const FGameplayTag Tag)
 				for (const auto& PointLoc : PathPoints)
 				{
 					Spline->AddSplinePoint(PointLoc, ESplineCoordinateSpace::World);
-					DrawDebugSphere(GetWorld(), PointLoc, 8.f, 8, FColor::Green, false, 5.f);
 				}
 				if (PathPoints.Num() > 0)
 				{
@@ -147,37 +145,27 @@ void AAuraPlayerController::AbilityInputTagHeld(const FGameplayTag Tag)
 {
 	if (!Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
 	{
-		if (GetAuraASC())
-		{
-			GetAuraASC()->AbilityInputTagHeld(Tag);
-		}
+		if (GetAuraASC()) GetAuraASC()->AbilityInputTagHeld(Tag);
 		return;
 	}
 
 	if (bTargeting)
 	{
-		if (GetAuraASC())
-		{
-			GetAuraASC()->AbilityInputTagHeld(Tag);
-		}
+		if (GetAuraASC()) GetAuraASC()->AbilityInputTagHeld(Tag);
 	}
 	else
 	{
 		FollowTime += GetWorld()->GetDeltaSeconds();
 
-		FHitResult Hit;
-		if (GetHitResultUnderCursor(ECC_Visibility, false, Hit))
+		if (CursorHit.bBlockingHit) CachedDestination = CursorHit.ImpactPoint;
 		{
-			CachedDestination = Hit.ImpactPoint;
+
 		}
 
-		if (FollowTime > ShortPressThreshold)
+		if (APawn* ControllerPawn = GetPawn<APawn>())
 		{
-			if (APawn* ControllerPawn = GetPawn<APawn>())
-			{
-				const FVector WorldDirection = (CachedDestination - ControllerPawn->GetActorLocation()).GetSafeNormal();
-				ControllerPawn->AddMovementInput(WorldDirection);
-			}
+			const FVector WorldDirection = (CachedDestination - ControllerPawn->GetActorLocation()).GetSafeNormal();
+			ControllerPawn->AddMovementInput(WorldDirection);
 		}
 	}
 }
