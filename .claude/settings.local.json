@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__unreal_editor__get_level_actors",
+      "mcp__unreal_editor__execute_python"
+    ]
+  }
+}
