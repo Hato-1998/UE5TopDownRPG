@@ -2,26 +2,37 @@
 
 
 #include "Player/AuraPlayerController.h"
-#include "Character/AuraCharacter.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AuraGameplayTags.h"
+#include "Interaction/HighLightInterface.h"
 #include "EnhancedInputSubsystems.h"
-#include "EnhancedInputComponent.h"
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
+#include "Components/SplineComponent.h"
+#include "Input/AuraInputComponent.h"
+#include "NavigationSystem.h"
+#include "NavigationPath.h"
 
 AAuraPlayerController::AAuraPlayerController()
 {
 	bReplicates = true;
+
+	Spline = CreateDefaultSubobject<USplineComponent>("Spline");
 }
 
 void AAuraPlayerController::PlayerTick(float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);
+	if (!IsLocalController()) return;
 
 	CursorTrace();
+	AutoRun();
 }
 
 void AAuraPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+	if (!IsLocalController()) return;
 	check(AuraContext);
 
 	UEnhancedInputLocalPlayerSubsystem* Subsystem =
@@ -31,7 +42,7 @@ void AAuraPlayerController::BeginPlay()
 		Subsystem->AddMappingContext(AuraContext, 0);
 	}
 
-	bShowMouseCursor= true;
+	bShowMouseCursor = true;
 	DefaultMouseCursor = EMouseCursor::Default;
 
 	FInputModeGameAndUI InputModeData;
@@ -43,10 +54,14 @@ void AAuraPlayerController::BeginPlay()
 void AAuraPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
-	UEnhancedInputComponent* EnhnaInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent);
+	UAuraInputComponent* AuraInputComponent = CastChecked<UAuraInputComponent>(InputComponent);
 
-	EnhnaInputComponent->BindAction(
+	AuraInputComponent->BindAction(
 		MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::Move);
+
+	AuraInputComponent->BindAbilityActions(
+		InputConfig, this, &AAuraPlayerController::AbilityInputTagPressed,
+		&AAuraPlayerController::AbilityInputTagReleased, &AAuraPlayerController::AbilityInputTagHeld);
 }
 
 void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
@@ -75,44 +90,128 @@ void AAuraPlayerController::CursorTrace()
 	LastActor = ThisActor;
 	ThisActor = CursorHit.GetActor();
 
-	/**
-	 * HIT된 Actor에 따른 시나리오
-	 * 1. LastActor가 null이고 ThisActor도 null일 경우 (두 액터다 해당 인터페이스를 가지고 있지 않음)
-	 * -> 행동 없음
-	 * 2. LastActor가 null이고 ThisActor가 valid일 경우 (현재 엑터만 해당 인터페이스를 가지고 있음)
-	 * -> ThisActor에 HighLight 실행
-	 * 3. LastActor가 valid이고 ThisActor가 null일 경우 (마우스가 지나간 액터에만 해당 인터페이스를 가지고 있음)
-	 * -> LastActor에 UnHighLight 실행
-	 * 4. LastActor가 Valid이고 ThisActor도 Vaild일 경우 + 두 액터가 다를 경우 (두 액터다 해당 인터페이스를 가지고 있지 않음)
-	 * -> ThisActor에 HighLight 실행, LastActor에 UnHighLight 실행
-	 * 5. LastActor가 Valid이고 ThisActor도 Vaild일 경우 + 두 액터가 같을 경우 (두 액터다 해당 인터페이스를 가지고 있지 않음)
-	 * -> 행동 없음
-	 */
-
-	if (LastActor == nullptr)
+	if (LastActor != ThisActor)
 	{
-		if (ThisActor != nullptr)
+		if (LastActor) LastActor->UnHighLightActor();
+		if (ThisActor) ThisActor->HighLightActor();
+	}
+}
+
+void AAuraPlayerController::AbilityInputTagPressed(const FGameplayTag Tag)
+{
+	if (Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
+	{
+		bTargeting = ThisActor != nullptr;
+		bAutoRunning = false;
+	}
+}
+
+void AAuraPlayerController::AbilityInputTagReleased(const FGameplayTag Tag)
+{
+	if (!Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
+	{
+		if (GetAuraASC()) GetAuraASC()->AbilityInputTagReleased(Tag);
+		return;
+	}
+
+	if (GetAuraASC()) GetAuraASC()->AbilityInputTagReleased(Tag);
+
+	if (!bTargeting)
+	{
+		const APawn* ControlledPawn = GetPawn<APawn>();
+		if (FollowTime <= ShortPressThreshold && ControlledPawn)
 		{
-			// 2번
-			ThisActor->HighLightActor();
+			if (UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(
+				this, ControlledPawn->GetActorLocation(), CachedDestination))
+			{
+				Spline->ClearSplinePoints();
+				const TArray<FVector>& PathPoints = NavPath->PathPoints;
+				for (const auto& PointLoc : PathPoints)
+				{
+					Spline->AddSplinePoint(PointLoc, ESplineCoordinateSpace::World);
+					DrawDebugSphere(GetWorld(), PointLoc, 8.f, 8, FColor::Green, false, 5.f);
+				}
+				if (PathPoints.Num() > 0)
+				{
+					CachedDestination = PathPoints[PathPoints.Num() - 1];
+					bAutoRunning = true;
+				}
+			}
+		}
+		FollowTime = 0.f;
+		bTargeting = false;
+	}
+}
+
+void AAuraPlayerController::AbilityInputTagHeld(const FGameplayTag Tag)
+{
+	if (!Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
+	{
+		if (GetAuraASC())
+		{
+			GetAuraASC()->AbilityInputTagHeld(Tag);
+		}
+		return;
+	}
+
+	if (bTargeting)
+	{
+		if (GetAuraASC())
+		{
+			GetAuraASC()->AbilityInputTagHeld(Tag);
 		}
 	}
 	else
 	{
-		if (ThisActor == nullptr)
+		FollowTime += GetWorld()->GetDeltaSeconds();
+
+		FHitResult Hit;
+		if (GetHitResultUnderCursor(ECC_Visibility, false, Hit))
 		{
-			// 3번
-			LastActor->UnHighLightActor();
+			CachedDestination = Hit.ImpactPoint;
 		}
-		else
+
+		if (FollowTime > ShortPressThreshold)
 		{
-			if (LastActor != ThisActor)
+			if (APawn* ControllerPawn = GetPawn<APawn>())
 			{
-				// 4번
-				LastActor->UnHighLightActor();
-				ThisActor->HighLightActor();
+				const FVector WorldDirection = (CachedDestination - ControllerPawn->GetActorLocation()).GetSafeNormal();
+				ControllerPawn->AddMovementInput(WorldDirection);
 			}
 		}
 	}
+}
 
+void AAuraPlayerController::AutoRun()
+{
+	if (!bAutoRunning) return;
+	if (APawn* ControlledPawn = GetPawn<APawn>())
+	{
+		const FVector LocationOnSpline =
+			Spline->FindLocationClosestToWorldLocation(
+				ControlledPawn->GetActorLocation(), ESplineCoordinateSpace::World);
+
+		const FVector Direction =
+			Spline->FindDirectionClosestToWorldLocation(
+				LocationOnSpline, ESplineCoordinateSpace::World);
+
+		ControlledPawn->AddMovementInput(Direction);
+
+		const float DistanceToDestination = (LocationOnSpline - CachedDestination).Length();
+
+		if (DistanceToDestination <= AutoRunAcceptanceRadius)
+		{
+			bAutoRunning = false;
+		}
+	}
+}
+
+UAuraAbilitySystemComponent* AAuraPlayerController::GetAuraASC()
+{
+	if (AuraAbilitySystemComponent == nullptr)
+	{
+		AuraAbilitySystemComponent = Cast<UAuraAbilitySystemComponent>(
+			UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetPawn<APawn>()));
+	}
+	return AuraAbilitySystemComponent;
 }

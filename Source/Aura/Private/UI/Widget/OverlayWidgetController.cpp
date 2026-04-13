@@ -6,11 +6,10 @@
 #include "AttributeSet.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
-#include "DynamicMesh/DynamicMesh3.h"
 
-void UOverlayWidgetController::BroadcastInitialValves()
+void UOverlayWidgetController::BroadcastInitialValues()
 {
-	const UAuraAttributeSet* AuraAttributeSet = Cast<UAuraAttributeSet>(AttributeSet);
+	const UAuraAttributeSet* AuraAttributeSet = CastChecked<UAuraAttributeSet>(AttributeSet);
 
 	OnHealthChanged.Broadcast(AuraAttributeSet->GetHealth());
 	OnMaxHealthChanged.Broadcast(AuraAttributeSet->GetMaxHealth());
@@ -21,7 +20,7 @@ void UOverlayWidgetController::BroadcastInitialValves()
 
 void UOverlayWidgetController::BindCallbacksToDependencies()
 {
-	const UAuraAttributeSet* AuraAttributeSet = Cast<UAuraAttributeSet>(AttributeSet);
+	const UAuraAttributeSet* AuraAttributeSet = CastChecked<UAuraAttributeSet>(AttributeSet);
 
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
 		AuraAttributeSet->GetHealthAttribute()).AddLambda(
@@ -63,6 +62,7 @@ void UOverlayWidgetController::BindCallbacksToDependencies()
 				if (AssetTag.MatchesTag(MessageTag))
 				{
 					FUIWidgetRow* Row = GetDataTableRowByTag<FUIWidgetRow>(MessageWidgetDataTable, AssetTag);
+					checkf(Row, TEXT("Row not found for tag [%s]"), *AssetTag.ToString());
 					MessageWidgetRowDelegate.Broadcast(*Row);
 				}
 			}

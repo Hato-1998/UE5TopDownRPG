@@ -1,0 +1,23 @@
+// CopyrightHATO
+
+
+#include "AbilitySystem/Data/AttributeInfo.h"
+
+FAuraAttributeInfo UAttributeInfo::FindAttributeInfoForTag(const FGameplayTag& AttributeTag, bool bLogNotFound) const
+{
+	for (const FAuraAttributeInfo& Info : AttributeEntries)
+	{
+		if (Info.AttributeTag.MatchesTagExact(AttributeTag))
+		{
+			return Info;
+		}
+	}
+
+	if (bLogNotFound)
+	{
+		UE_LOG(LogTemp, Error, TEXT("AttributeInfo: Could not find attribute info for tag %s in %s"),
+			*AttributeTag.ToString(), *GetNameSafe(this))
+	}
+
+	return FAuraAttributeInfo();
+}

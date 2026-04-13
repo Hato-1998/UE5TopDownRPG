@@ -47,6 +47,9 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void OnEndOverlap(AActor* TargetActor);
 
+	/** 주어진 정책에 해당하는 모든 Effect를 대상 Actor에 적용하는 헬퍼 함수 */
+	void ApplyEffectsForPolicy(AActor* TargetActor, EEffectApplicationPolicy PolicyToMatch);
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Applied Effects")
 	bool bDestroyOnEffectRemoval = false;
 
@@ -66,7 +69,7 @@ protected:
 	TSubclassOf<UGameplayEffect> InfinityGamePlayEffectClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Applied Effects")
-	EEffectApplicationPolicy InfinityEffectApplicationPolicy = EEffectApplicationPolicy::DoNotApply;;
+	EEffectApplicationPolicy InfinityEffectApplicationPolicy = EEffectApplicationPolicy::DoNotApply;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Applied Effects")
 	EEffectRemovePolicy InfinityEffectRemovePolicy = EEffectRemovePolicy::DoNotRemove;
@@ -75,7 +78,4 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Applied Effects")
 	float ActorLevel = 1.0f;
-
-private:
-
 };
