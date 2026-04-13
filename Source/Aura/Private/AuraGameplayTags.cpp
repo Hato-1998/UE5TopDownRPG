@@ -86,4 +86,7 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 
 	GameplayTags.InputTag_Action4 = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Input.Button.Action4"), FString("Input Tag for Action 4"));
+
+	GameplayTags.InputTag_Shift = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Input.Button.Shift"), FString("Input Tag for Shift"));
 }

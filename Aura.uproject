@@ -48,6 +48,10 @@
 		{
 			"Name": "WebAPI",
 			"Enabled": true
+		},
+		{
+			"Name": "MotionWarping",
+			"Enabled": true
 		}
 	]
 }

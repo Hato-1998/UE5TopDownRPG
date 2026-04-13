@@ -59,6 +59,11 @@ void AAuraPlayerController::SetupInputComponent()
 	AuraInputComponent->BindAction(
 		MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::Move);
 
+	AuraInputComponent->BindAction(
+		ShiftAction, ETriggerEvent::Started, this, &AAuraPlayerController::ShiftPressed);
+	AuraInputComponent->BindAction(
+		ShiftAction, ETriggerEvent::Completed, this, &AAuraPlayerController::ShiftReleased);
+
 	AuraInputComponent->BindAbilityActions(
 		InputConfig, this, &AAuraPlayerController::AbilityInputTagPressed,
 		&AAuraPlayerController::AbilityInputTagReleased, &AAuraPlayerController::AbilityInputTagHeld);
@@ -66,6 +71,8 @@ void AAuraPlayerController::SetupInputComponent()
 
 void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 {
+	bAutoRunning = false;
+
 	const FVector2D InputAxisVector = InputActionValue.Get<FVector2D>();
 	const FRotator Rotation = GetControlRotation();
 	const FRotator YawRotation = FRotator(0, Rotation.Yaw, 0);
@@ -98,7 +105,7 @@ void AAuraPlayerController::CursorTrace()
 
 void AAuraPlayerController::AbilityInputTagPressed(const FGameplayTag Tag)
 {
-	if (Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
+	if (Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_RMB))
 	{
 		bTargeting = ThisActor != nullptr;
 		bAutoRunning = false;
@@ -107,7 +114,7 @@ void AAuraPlayerController::AbilityInputTagPressed(const FGameplayTag Tag)
 
 void AAuraPlayerController::AbilityInputTagReleased(const FGameplayTag Tag)
 {
-	if (!Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
+	if (!Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_RMB))
 	{
 		if (GetAuraASC()) GetAuraASC()->AbilityInputTagReleased(Tag);
 		return;
@@ -115,7 +122,7 @@ void AAuraPlayerController::AbilityInputTagReleased(const FGameplayTag Tag)
 
 	if (GetAuraASC()) GetAuraASC()->AbilityInputTagReleased(Tag);
 
-	if (!bTargeting)
+	if (!bTargeting && !bShiftKeyDown)
 	{
 		const APawn* ControlledPawn = GetPawn<APawn>();
 		if (FollowTime <= ShortPressThreshold && ControlledPawn)
@@ -143,13 +150,13 @@ void AAuraPlayerController::AbilityInputTagReleased(const FGameplayTag Tag)
 
 void AAuraPlayerController::AbilityInputTagHeld(const FGameplayTag Tag)
 {
-	if (!Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
+	if (!Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_RMB))
 	{
 		if (GetAuraASC()) GetAuraASC()->AbilityInputTagHeld(Tag);
 		return;
 	}
 
-	if (bTargeting)
+	if (bTargeting || bShiftKeyDown)
 	{
 		if (GetAuraASC()) GetAuraASC()->AbilityInputTagHeld(Tag);
 	}

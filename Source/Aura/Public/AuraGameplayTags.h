@@ -42,6 +42,7 @@ public:
 	FGameplayTag InputTag_Action2;
 	FGameplayTag InputTag_Action3;
 	FGameplayTag InputTag_Action4;
+	FGameplayTag InputTag_Shift;
 
 protected:
 
