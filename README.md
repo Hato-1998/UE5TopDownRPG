@@ -16,6 +16,13 @@ Week1:
 4. UI Widget 컨트롤러 및 기반 작업
 
 Week2:
+1. Targeting 기능 구현
+2. Spline 기반 Auto Run 구현
+3. Gameplay Effect 시스템 구현
+4. 스킬 시스템 구현
+
+Week3:
+1.
 
 ##
 
