@@ -2,6 +2,9 @@
 
 
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
+
+#include "AbilitySystemComponent.h"
+#include "Game/AuraGameModeBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/AuraPlayerState.h"
 #include "UI/HUD/AuraHUD.h"
@@ -45,4 +48,30 @@ UAttributeWidgetMenuController* UAuraAbilitySystemLibrary::GetAttributeWidgetMen
 		return AuraHUD->GetAttributeWidgetMenuController(Params);
 	}
 	return nullptr;
+}
+
+void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* WorldContextObject, ECharacterClass CharacterClass, float Level, UAbilitySystemComponent* ASC)
+{
+	AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
+	if (AuraGameMode == nullptr) return;
+
+	AActor* AvatarActor = ASC->GetAvatarActor();
+
+	UCharacterClassInfo* CharacterClassInfo = AuraGameMode->CharacterClassInfo;
+	FCharacterClassDefaultInfo ClassDefaultInfo = AuraGameMode->CharacterClassInfo->GetClassDefaultInfo(CharacterClass);
+
+	FGameplayEffectContextHandle PrimaryAttributeContext = ASC->MakeEffectContext();
+	PrimaryAttributeContext.AddSourceObject(AvatarActor);
+	const FGameplayEffectSpecHandle PrimarySpecHandle = ASC->MakeOutgoingSpec(ClassDefaultInfo.PrimaryAttributes, Level, PrimaryAttributeContext);
+	ASC->ApplyGameplayEffectSpecToSelf(*PrimarySpecHandle.Data.Get());
+
+	FGameplayEffectContextHandle SecondaryAttributeContext = ASC->MakeEffectContext();
+	SecondaryAttributeContext.AddSourceObject(AvatarActor);
+	const FGameplayEffectSpecHandle SecondarySpecHandle = ASC->MakeOutgoingSpec(CharacterClassInfo->SecondaryAttributes, Level, SecondaryAttributeContext);
+	ASC->ApplyGameplayEffectSpecToSelf(*SecondarySpecHandle.Data.Get());
+
+	FGameplayEffectContextHandle VitalAttributeContext = ASC->MakeEffectContext();
+	VitalAttributeContext.AddSourceObject(AvatarActor);
+	const FGameplayEffectSpecHandle VitalSpecHandle = ASC->MakeOutgoingSpec(CharacterClassInfo->VitalAttributes, Level,VitalAttributeContext);
+	ASC->ApplyGameplayEffectSpecToSelf(*VitalSpecHandle.Data.Get());
 }
