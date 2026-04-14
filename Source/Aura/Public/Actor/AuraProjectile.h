@@ -3,9 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayEffectTypes.h"
 #include "GameFramework/Actor.h"
 #include "AuraProjectile.generated.h"
 
+class UAudioComponent;
 class USphereComponent;
 class UProjectileMovementComponent;
 class UNiagaraSystem;
@@ -22,6 +24,9 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
 
+	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
+	FGameplayEffectSpecHandle DamageEffectSpecHandle;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -36,6 +41,10 @@ protected:
 		bool bFromSweep,
 		const FHitResult& SweepResult);
 private:
+
+	UPROPERTY(EditDefaultsOnly)
+	float LifeTime = 5.0f;
+
 	bool bHit = false;
 
 	UPROPERTY(VisibleAnywhere)
@@ -46,4 +55,10 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<USoundBase> ImpactSound;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<USoundBase> LoopingSound;
+
+	UPROPERTY()
+	TObjectPtr<UAudioComponent> LoopingSoundComponent;
 };

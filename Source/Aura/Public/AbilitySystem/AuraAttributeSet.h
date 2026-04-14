@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameFramework/Character.h"
 #include "GameplayEffect.h"
 #include "AttributeSet.h"
 #include "AbilitySystemComponent.h"
