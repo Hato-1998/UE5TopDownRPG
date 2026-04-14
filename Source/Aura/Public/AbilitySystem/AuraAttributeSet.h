@@ -36,7 +36,7 @@ struct FEffectProperties
 	ACharacter* SourceCharacter = nullptr;
 
 	UPROPERTY()
-	const UAbilitySystemComponent* SourceASC = nullptr;
+	UAbilitySystemComponent* SourceASC = nullptr;
 
 	UPROPERTY()
 	AActor* TargetAvatarActor = nullptr;
@@ -48,7 +48,7 @@ struct FEffectProperties
 	ACharacter* TargetCharacter = nullptr;
 
 	UPROPERTY()
-	const UAbilitySystemComponent* TargetASC = nullptr;
+	UAbilitySystemComponent* TargetASC = nullptr;
 };
 
 /**
@@ -144,6 +144,14 @@ public:
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Mana, Category = "Vital Attributes")
 	FGameplayAttributeData Mana;
 	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, Mana)
+
+	/*
+	* 메타 속성
+	*/
+
+	UPROPERTY(BlueprintReadOnly, Category = "Meta Attributes")
+	FGameplayAttributeData IncomingDamage;
+	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, IncomingDamage)
 
 	/*
 	* 상태 속성
