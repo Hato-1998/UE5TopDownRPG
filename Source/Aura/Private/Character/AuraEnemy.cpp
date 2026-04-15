@@ -68,9 +68,11 @@ void AAuraEnemy::InitAbilityActorInfo()
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
 	Cast<UAuraAbilitySystemComponent>(AbilitySystemComponent)->AbilityActorInfoSet();
 
-	InitializeDefaultAttributes();
-
-	UAuraAbilitySystemLibrary::GiveStartupAbilities(this, AbilitySystemComponent);
+	if (HasAuthority())
+	{
+		InitializeDefaultAttributes();
+		UAuraAbilitySystemLibrary::GiveStartupAbilities(this, AbilitySystemComponent);
+	}
 
 	// HealthBar 위젯에 WidgetController로 자기 자신을 세팅
 	if (UAuraUserWidget* AuraUserWidget = Cast<UAuraUserWidget>(HealthBar->GetUserWidgetObject()))
