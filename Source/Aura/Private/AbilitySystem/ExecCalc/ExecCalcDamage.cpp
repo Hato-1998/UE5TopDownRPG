@@ -19,6 +19,11 @@ struct AuraDamageStatics
 	DECLARE_ATTRIBUTE_CAPTUREDEF(CriticalHitDamage);
 	DECLARE_ATTRIBUTE_CAPTUREDEF(CriticalHitReduction);
 
+	DECLARE_ATTRIBUTE_CAPTUREDEF(ResFire);
+	DECLARE_ATTRIBUTE_CAPTUREDEF(ResLightning);
+	DECLARE_ATTRIBUTE_CAPTUREDEF(ResArcane);
+	DECLARE_ATTRIBUTE_CAPTUREDEF(ResPhysical);
+
 	AuraDamageStatics()
 	{
 		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, Armor, Target, false);
@@ -27,6 +32,11 @@ struct AuraDamageStatics
 		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, CriticalHitChance, Source, false);
 		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, CriticalHitDamage, Source, false);
 		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, CriticalHitReduction, Target, false);
+
+		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, ResFire, Target, false);
+		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, ResLightning, Target, false);
+		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, ResArcane, Target, false);
+		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, ResPhysical, Target, false);
 	}
 };
 
@@ -45,6 +55,11 @@ UExecCalcDamage::UExecCalcDamage()
 	RelevantAttributesToCapture.Add(DamageStatics().CriticalHitChanceDef);
 	RelevantAttributesToCapture.Add(DamageStatics().CriticalHitDamageDef);
 	RelevantAttributesToCapture.Add(DamageStatics().CriticalHitReductionDef);
+
+	RelevantAttributesToCapture.Add(DamageStatics().ResFireDef);
+	RelevantAttributesToCapture.Add(DamageStatics().ResLightningDef);
+	RelevantAttributesToCapture.Add(DamageStatics().ResArcaneDef);
+	RelevantAttributesToCapture.Add(DamageStatics().ResPhysicalDef);
 }
 
 void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams,
@@ -68,8 +83,34 @@ void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutio
 	EvaluateParameters.SourceTags = SourceTags;
 	EvaluateParameters.TargetTags = TargetTags;
 
-	// 데미지 정보 불러오기
-	float Damage = Spec.GetSetByCallerMagnitude(FAuraGameplayTags::Get().Damage);
+	// 데미지 정보 불러오기 — 속성 저항 적용
+	float Damage = 0.f;
+
+	const FAuraGameplayTags& Tags = FAuraGameplayTags::Get();
+
+	TMap<FGameplayTag, FGameplayEffectAttributeCaptureDefinition> ResTagToCaptureDef;
+	ResTagToCaptureDef.Add(Tags.Attribute_Secondary_ResFire, DamageStatics().ResFireDef);
+	ResTagToCaptureDef.Add(Tags.Attribute_Secondary_ResLightning, DamageStatics().ResLightningDef);
+	ResTagToCaptureDef.Add(Tags.Attribute_Secondary_ResArcane, DamageStatics().ResArcaneDef);
+	ResTagToCaptureDef.Add(Tags.Attribute_Secondary_ResPhysical, DamageStatics().ResPhysicalDef);
+
+	for (const TTuple<FGameplayTag, FGameplayTag>& Pair : Tags.DamageTypesToResistances)
+	{
+		const FGameplayTag DamageTypeTag = Pair.Key;
+		const FGameplayTag ResistanceTag = Pair.Value;
+
+		checkf(ResistanceTag.IsValid(), TEXT("ResistanceTag is not valid"));
+
+		const float DamageTypeValue = Spec.GetSetByCallerMagnitude(DamageTypeTag, false, 0.f);
+		if (DamageTypeValue <= 0.f) continue;
+
+		float Resistance = 0.f;
+		ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(
+			ResTagToCaptureDef[ResistanceTag], EvaluateParameters, Resistance);
+		Resistance = FMath::Clamp(Resistance, 0.f, 100.f);
+
+		Damage += DamageTypeValue * (100.f - Resistance) / 100.f;
+	}
 
 	// 크리 확률 가져오기, 크리시 데미지 2배 + 크리데미지로 보정
 	float CriticalHitChance = 0.f;

@@ -34,6 +34,12 @@ UAuraAttributeSet::UAuraAttributeSet()
 	TagsToAttributes.Add(Tags.Attribute_Secondary_MaxHealth, GetMaxHealthAttribute());
 	TagsToAttributes.Add(Tags.Attribute_Secondary_MaxMana, GetMaxManaAttribute());
 
+	// Resistance Attributes
+	TagsToAttributes.Add(Tags.Attribute_Secondary_ResFire, GetResFireAttribute());
+	TagsToAttributes.Add(Tags.Attribute_Secondary_ResLightning, GetResLightningAttribute());
+	TagsToAttributes.Add(Tags.Attribute_Secondary_ResArcane, GetResArcaneAttribute());
+	TagsToAttributes.Add(Tags.Attribute_Secondary_ResPhysical, GetResPhysicalAttribute());
+
 	// Vital Attributes
 	TagsToAttributes.Add(Tags.Attribute_Vital_Health, GetHealthAttribute());
 	TagsToAttributes.Add(Tags.Attribute_Vital_Mana, GetManaAttribute());
@@ -63,6 +69,15 @@ void UAuraAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, CriticalHitReduction, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, HealthRegeneration, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, ManaRegeneration, COND_None, REPNOTIFY_Always);
+
+	/*
+	 * 저항 속성
+	*/
+
+	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, ResFire, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, ResLightning, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, ResArcane, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, ResPhysical, COND_None, REPNOTIFY_Always);
 
 	/*
 	* 상태 속성
@@ -181,9 +196,9 @@ void UAuraAttributeSet::ShowFloatingText(const FEffectProperties& Props, float D
 {
 	if (Props.SourceCharacter != Props.TargetCharacter)
 	{
-		if (AAuraPlayerController* PC = Cast<AAuraPlayerController>(UGameplayStatics::GetPlayerController(Props.SourceCharacter, 0)))
+		if (AAuraPlayerController* PC = Cast<AAuraPlayerController>(Props.SourceCharacter->Controller))
 		{
-			PC->ShowDamageNumber(Damage, Props.TargetCharacter);
+			PC->ShowDamageNumber(Damage, Props.TargetCharacter, bBlockedHit, bCriticalHit);
 		}
 	}
 }
@@ -266,4 +281,24 @@ void UAuraAttributeSet::OnRep_HealthRegeneration(const FGameplayAttributeData& O
 void UAuraAttributeSet::OnRep_ManaRegeneration(const FGameplayAttributeData& OldManaRegeneration) const
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, ManaRegeneration, OldManaRegeneration);
+}
+
+void UAuraAttributeSet::OnRep_ResFire(const FGameplayAttributeData& OldResFire) const
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, ResFire, OldResFire);
+}
+
+void UAuraAttributeSet::OnRep_ResLightning(const FGameplayAttributeData& OldResLightning) const
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, ResLightning, OldResLightning);
+}
+
+void UAuraAttributeSet::OnRep_ResArcane(const FGameplayAttributeData& OldResArcane) const
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, ResArcane, OldResArcane);
+}
+
+void UAuraAttributeSet::OnRep_ResPhysical(const FGameplayAttributeData& OldResPhysical) const
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, ResPhysical, OldResPhysical);
 }

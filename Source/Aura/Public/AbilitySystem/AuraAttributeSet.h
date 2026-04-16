@@ -134,6 +134,26 @@ public:
 	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, MaxMana)
 
 	/*
+	 * 저항 속성
+	 */
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_ResFire, Category = "Resistance Attributes")
+	FGameplayAttributeData ResFire;
+	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, ResFire)
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_ResLightning, Category = "Resistance Attributes")
+	FGameplayAttributeData ResLightning;
+	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, ResLightning)
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_ResArcane, Category = "Resistance Attributes")
+	FGameplayAttributeData ResArcane;
+	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, ResArcane)
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_ResPhysical, Category = "Resistance Attributes")
+	FGameplayAttributeData ResPhysical;
+	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, ResPhysical)
+
+	/*
 	 * 상태 속성
 	 */
 
@@ -208,6 +228,18 @@ public:
 
 	UFUNCTION()
 	void OnRep_ManaRegeneration(const FGameplayAttributeData& OldManaRegeneration) const;
+
+	UFUNCTION()
+	void OnRep_ResFire(const FGameplayAttributeData& OldResFire) const;
+
+	UFUNCTION()
+	void OnRep_ResLightning(const FGameplayAttributeData& OldResLightning) const;
+
+	UFUNCTION()
+	void OnRep_ResArcane(const FGameplayAttributeData& OldResArcane) const;
+
+	UFUNCTION()
+	void OnRep_ResPhysical(const FGameplayAttributeData& OldResPhysical) const;
 
 private:
 	void SetEffectProperties(const FGameplayEffectModCallbackData& Data, FEffectProperties& Props) const;

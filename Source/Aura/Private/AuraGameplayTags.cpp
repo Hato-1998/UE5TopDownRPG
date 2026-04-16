@@ -90,13 +90,53 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	GameplayTags.InputTag_Shift = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Input.Button.Shift"), FString("Input Tag for Shift"));
 
-
 	/*
-	 * Global Tag
+	 * Damage Types
 	 */
 
 	GameplayTags.Damage = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("Damage"), FString("Damage"));
+
+	GameplayTags.Damage_Fire = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Damage.Fire"), FString("Fire Damage Type"));
+
+	GameplayTags.Damage_Lightning = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Damage.Lightning"), FString("Lightning Damage Type"));
+
+	GameplayTags.Damage_Arcane = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Damage.Arcane"), FString("Arcane Damage Type"));
+
+	GameplayTags.Damage_Physical = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Damage.Physical"), FString("Physical Damage Type"));
+
+	/*
+	 * Resistance Types
+	 */
+
+	GameplayTags.Attribute_Secondary_ResFire = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Attribute.Secondary.Resistance.Fire"), FString("Fire Resistance Type"));
+
+	GameplayTags.Attribute_Secondary_ResLightning = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Attribute.Secondary.Resistance.Lightning"), FString("Lightning Resistance Type"));
+
+	GameplayTags.Attribute_Secondary_ResArcane = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Attribute.Secondary.Resistance.Arcane"), FString("Arcane Resistance Type"));
+
+	GameplayTags.Attribute_Secondary_ResPhysical = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Attribute.Secondary.Resistance.Physical"), FString("Physical Resistance Type"));
+
+	/*
+	 * Map of Damage Types to Resistance Types
+	 */
+
+	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Fire, GameplayTags.Attribute_Secondary_ResFire);
+	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Lightning, GameplayTags.Attribute_Secondary_ResLightning);
+	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Arcane, GameplayTags.Attribute_Secondary_ResArcane);
+	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Physical, GameplayTags.Attribute_Secondary_ResPhysical);
+
+	/*
+	 * Global Tag
+	 */
 
 	GameplayTags.Effects_HitReact = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("Effects.HitReact"), FString("Effects tag for HitReact"));
