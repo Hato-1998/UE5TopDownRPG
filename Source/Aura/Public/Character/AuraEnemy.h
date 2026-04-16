@@ -10,6 +10,8 @@
 
 struct FGameplayTag;
 class UWidgetComponent;
+class UBehaviorTree;
+class AAuraAIController;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyAttributeChangedSignature, float, NewValue);
 
@@ -23,6 +25,7 @@ class AURA_API AAuraEnemy : public AAuraCharacterBase, public IHighLightInterfac
 
 public:
 	AAuraEnemy();
+	virtual void PossessedBy(AController* NewController) override;
 
 	virtual void HighLightActor() override;
 	virtual void UnHighLightActor() override;
@@ -61,4 +64,10 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UWidgetComponent> HealthBar;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI")
+	TObjectPtr<UBehaviorTree> BehaviorTree;
+
+	UPROPERTY()
+	TObjectPtr<AAuraAIController> AuraAIController;
 };

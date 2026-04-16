@@ -35,6 +35,21 @@ UAnimMontage* AAuraCharacterBase::GetHitReactMontage_Implementation()
 	return HitReactMontage;
 }
 
+UAnimMontage* AAuraCharacterBase::GetAttackMontage_Implementation()
+{
+	return AttackMontage;
+}
+
+AActor* AAuraCharacterBase::GetCombatTarget_Implementation() const
+{
+	return CombatTarget;
+}
+
+void AAuraCharacterBase::SetCombatTarget_Implementation(AActor* InCombatTarget)
+{
+	CombatTarget = InCombatTarget;
+}
+
 void AAuraCharacterBase::Die()
 {
 	Weapon->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));

@@ -27,6 +27,11 @@ public:
 
 	virtual UAnimMontage* GetHitReactMontage_Implementation() override;
 
+	virtual UAnimMontage* GetAttackMontage_Implementation() override;
+
+	virtual AActor* GetCombatTarget_Implementation() const override;
+	virtual void SetCombatTarget_Implementation(AActor* InCombatTarget) override;
+
 	virtual void Die() override;
 
 	virtual void MulticastHandleDeath();
@@ -85,4 +90,10 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	TObjectPtr<UAnimMontage> HitReactMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	TObjectPtr<UAnimMontage> AttackMontage;
+
+	UPROPERTY()
+	TObjectPtr<AActor> CombatTarget;
 };
