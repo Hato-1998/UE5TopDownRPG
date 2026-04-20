@@ -6,7 +6,6 @@
 #include "AbilitySystemInterface.h"
 #include "GameFramework/Character.h"
 #include "Interaction/CombatInterface.h"
-
 #include "AuraCharacterBase.generated.h"
 
 class UAbilitySystemComponent;
@@ -25,17 +24,10 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	UAttributeSet* GetAttributeSet() const { return AttributeSet; }
 
-	virtual UAnimMontage* GetHitReactMontage_Implementation() override;
-
-	virtual UAnimMontage* GetAttackMontage_Implementation() override;
-
-	virtual AActor* GetCombatTarget_Implementation() const override;
-	virtual void SetCombatTarget_Implementation(AActor* InCombatTarget) override;
-
-	virtual void Die() override;
-
 	virtual void MulticastHandleDeath();
 
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	TArray<FTaggedMontage> AttackMontages;
 protected:
 	virtual void BeginPlay() override;
 	virtual void InitAbilityActorInfo();
@@ -46,10 +38,19 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	TObjectPtr<USkeletalMeshComponent> Weapon;
 
-	UPROPERTY(EditAnywhere, Category = "Combat")
-	FName WeaponTipSocketName;
+	// CombatInterface
+	virtual AActor* GetCombatTarget_Implementation() const override;
+	virtual void SetCombatTarget_Implementation(AActor* InCombatTarget) override;
 
-	virtual FVector GetCombatSocketLocation() const override;
+	virtual void Die() override;
+
+	virtual UAnimMontage* GetHitReactMontage_Implementation() override;
+
+	virtual FVector GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const override;
+
+	virtual bool IsDead_Implementation() const override;
+	virtual AActor* GetAvatar_Implementation() override;
+	virtual TArray<FTaggedMontage> GetAttackMontages_Implementation() const override;
 
 	UPROPERTY()
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
@@ -83,6 +84,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TObjectPtr<UMaterialInstance> WeaponDissolveMaterialInstance;
+
+	bool bDead = false;
 private:
 
 	UPROPERTY(EditAnywhere, Category = "Abilities")
@@ -90,9 +93,6 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	TObjectPtr<UAnimMontage> HitReactMontage;
-
-	UPROPERTY(EditAnywhere, Category = "Combat")
-	TObjectPtr<UAnimMontage> AttackMontage;
 
 	UPROPERTY()
 	TObjectPtr<AActor> CombatTarget;

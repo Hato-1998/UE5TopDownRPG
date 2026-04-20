@@ -9,6 +9,7 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "Aura/Aura.h"
 #include "Components/CapsuleComponent.h"
+#include "AuraGameplayTags.h"
 
 AAuraCharacterBase::AAuraCharacterBase()
 {
@@ -33,11 +34,6 @@ UAbilitySystemComponent* AAuraCharacterBase::GetAbilitySystemComponent() const
 UAnimMontage* AAuraCharacterBase::GetHitReactMontage_Implementation()
 {
 	return HitReactMontage;
-}
-
-UAnimMontage* AAuraCharacterBase::GetAttackMontage_Implementation()
-{
-	return AttackMontage;
 }
 
 AActor* AAuraCharacterBase::GetCombatTarget_Implementation() const
@@ -70,6 +66,8 @@ void AAuraCharacterBase::MulticastHandleDeath()
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	Dissolve();
+
+	bDead = true;
 }
 
 void AAuraCharacterBase::BeginPlay()
@@ -100,10 +98,45 @@ void AAuraCharacterBase::InitializeDefaultAttributes() const
 	ApplyEffectToSelf(DefaultVitalAttributes, 1.f);
 }
 
-FVector AAuraCharacterBase::GetCombatSocketLocation() const
+FVector AAuraCharacterBase::GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const
 {
-	check(Weapon);
-	return Weapon->GetSocketLocation(WeaponTipSocketName);
+	const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
+	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_Weapon) && IsValid(Weapon))
+	{
+		for (const FTaggedMontage& TaggedMontage : AttackMontages)
+		{
+			if (TaggedMontage.MontageTag.MatchesTagExact(MontageTag))
+			{
+				return Weapon->GetSocketLocation(TaggedMontage.SocketName);
+			}
+		}
+	}
+	if (!MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_Weapon))
+	{
+		for (const FTaggedMontage& TaggedMontage : AttackMontages)
+		{
+			if (TaggedMontage.MontageTag.MatchesTagExact(MontageTag))
+			{
+				return GetMesh()->GetSocketLocation(TaggedMontage.SocketName);
+			}
+		}
+	}
+	return FVector::ZeroVector;
+}
+
+bool AAuraCharacterBase::IsDead_Implementation() const
+{
+	return bDead;
+}
+
+AActor* AAuraCharacterBase::GetAvatar_Implementation()
+{
+	return this;
+}
+
+TArray<FTaggedMontage> AAuraCharacterBase::GetAttackMontages_Implementation() const
+{
+	return AttackMontages;
 }
 
 void AAuraCharacterBase::AddCharacterAbilities() const
