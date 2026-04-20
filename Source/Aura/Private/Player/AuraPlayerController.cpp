@@ -12,6 +12,8 @@
 #include "Input/AuraInputComponent.h"
 #include "NavigationSystem.h"
 #include "NavigationPath.h"
+#include "GameFramework/Character.h"
+#include "UI/Widget/DamageTextComponent.h"
 
 AAuraPlayerController::AAuraPlayerController()
 {
@@ -27,6 +29,19 @@ void AAuraPlayerController::PlayerTick(float DeltaTime)
 
 	CursorTrace();
 	AutoRun();
+}
+
+void AAuraPlayerController::ShowDamageNumber_Implementation(float DamageAmount, ACharacter* TargetCharacter, bool bBlockedHit, bool bCriticalHit)
+{
+	if (IsValid(TargetCharacter) && DamageTextComponentClass && IsLocalController())
+	{
+		UDamageTextComponent* DamageText = NewObject<UDamageTextComponent>(TargetCharacter, DamageTextComponentClass);
+		DamageText->RegisterComponent();
+		DamageText->AttachToComponent(TargetCharacter->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+		DamageText->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+		DamageText->SetDamageText(DamageAmount, bBlockedHit, bCriticalHit);
+	}
+
 }
 
 void AAuraPlayerController::BeginPlay()
@@ -59,6 +74,11 @@ void AAuraPlayerController::SetupInputComponent()
 	AuraInputComponent->BindAction(
 		MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::Move);
 
+	AuraInputComponent->BindAction(
+		ShiftAction, ETriggerEvent::Started, this, &AAuraPlayerController::ShiftPressed);
+	AuraInputComponent->BindAction(
+		ShiftAction, ETriggerEvent::Completed, this, &AAuraPlayerController::ShiftReleased);
+
 	AuraInputComponent->BindAbilityActions(
 		InputConfig, this, &AAuraPlayerController::AbilityInputTagPressed,
 		&AAuraPlayerController::AbilityInputTagReleased, &AAuraPlayerController::AbilityInputTagHeld);
@@ -66,6 +86,8 @@ void AAuraPlayerController::SetupInputComponent()
 
 void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 {
+	bAutoRunning = false;
+
 	const FVector2D InputAxisVector = InputActionValue.Get<FVector2D>();
 	const FRotator Rotation = GetControlRotation();
 	const FRotator YawRotation = FRotator(0, Rotation.Yaw, 0);
@@ -82,7 +104,6 @@ void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 
 void AAuraPlayerController::CursorTrace()
 {
-	FHitResult CursorHit;
 	GetHitResultUnderCursor(
 		ECC_Visibility, false, CursorHit);
 	if (!CursorHit.bBlockingHit) return;
@@ -99,7 +120,7 @@ void AAuraPlayerController::CursorTrace()
 
 void AAuraPlayerController::AbilityInputTagPressed(const FGameplayTag Tag)
 {
-	if (Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
+	if (Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_RMB))
 	{
 		bTargeting = ThisActor != nullptr;
 		bAutoRunning = false;
@@ -108,7 +129,7 @@ void AAuraPlayerController::AbilityInputTagPressed(const FGameplayTag Tag)
 
 void AAuraPlayerController::AbilityInputTagReleased(const FGameplayTag Tag)
 {
-	if (!Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
+	if (!Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_RMB))
 	{
 		if (GetAuraASC()) GetAuraASC()->AbilityInputTagReleased(Tag);
 		return;
@@ -116,7 +137,7 @@ void AAuraPlayerController::AbilityInputTagReleased(const FGameplayTag Tag)
 
 	if (GetAuraASC()) GetAuraASC()->AbilityInputTagReleased(Tag);
 
-	if (!bTargeting)
+	if (!bTargeting && !bShiftKeyDown)
 	{
 		const APawn* ControlledPawn = GetPawn<APawn>();
 		if (FollowTime <= ShortPressThreshold && ControlledPawn)
@@ -129,7 +150,6 @@ void AAuraPlayerController::AbilityInputTagReleased(const FGameplayTag Tag)
 				for (const auto& PointLoc : PathPoints)
 				{
 					Spline->AddSplinePoint(PointLoc, ESplineCoordinateSpace::World);
-					DrawDebugSphere(GetWorld(), PointLoc, 8.f, 8, FColor::Green, false, 5.f);
 				}
 				if (PathPoints.Num() > 0)
 				{
@@ -145,39 +165,29 @@ void AAuraPlayerController::AbilityInputTagReleased(const FGameplayTag Tag)
 
 void AAuraPlayerController::AbilityInputTagHeld(const FGameplayTag Tag)
 {
-	if (!Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
+	if (!Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_RMB))
 	{
-		if (GetAuraASC())
-		{
-			GetAuraASC()->AbilityInputTagHeld(Tag);
-		}
+		if (GetAuraASC()) GetAuraASC()->AbilityInputTagHeld(Tag);
 		return;
 	}
 
-	if (bTargeting)
+	if (bTargeting || bShiftKeyDown)
 	{
-		if (GetAuraASC())
-		{
-			GetAuraASC()->AbilityInputTagHeld(Tag);
-		}
+		if (GetAuraASC()) GetAuraASC()->AbilityInputTagHeld(Tag);
 	}
 	else
 	{
 		FollowTime += GetWorld()->GetDeltaSeconds();
 
-		FHitResult Hit;
-		if (GetHitResultUnderCursor(ECC_Visibility, false, Hit))
+		if (CursorHit.bBlockingHit) CachedDestination = CursorHit.ImpactPoint;
 		{
-			CachedDestination = Hit.ImpactPoint;
+
 		}
 
-		if (FollowTime > ShortPressThreshold)
+		if (APawn* ControllerPawn = GetPawn<APawn>())
 		{
-			if (APawn* ControllerPawn = GetPawn<APawn>())
-			{
-				const FVector WorldDirection = (CachedDestination - ControllerPawn->GetActorLocation()).GetSafeNormal();
-				ControllerPawn->AddMovementInput(WorldDirection);
-			}
+			const FVector WorldDirection = (CachedDestination - ControllerPawn->GetActorLocation()).GetSafeNormal();
+			ControllerPawn->AddMovementInput(WorldDirection);
 		}
 	}
 }

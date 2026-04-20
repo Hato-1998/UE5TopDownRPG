@@ -7,6 +7,7 @@
 #include "GameplayTagContainer.h"
 #include "AuraPlayerController.generated.h"
 
+class UDamageTextComponent;
 class UAuraAbilitySystemComponent;
 class UAuraInputConfig;
 class UInputMappingContext;
@@ -24,6 +25,9 @@ public:
 	AAuraPlayerController();
 	virtual void PlayerTick(float DeltaTime) override;
 
+	UFUNCTION(Client, Reliable)
+	void ShowDamageNumber(float DamageAmount, ACharacter* TargetCharacter, bool bBlockedHit, bool bCriticalHit);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -35,6 +39,13 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
 
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> ShiftAction;
+
+	void ShiftPressed() { bShiftKeyDown = true;};
+	void ShiftReleased() { bShiftKeyDown = false;};
+	bool bShiftKeyDown = false;
+
 	void Move(const FInputActionValue& InputActionValue);
 
 	void CursorTrace();
@@ -42,6 +53,7 @@ private:
 
 	TScriptInterface<IHighLightInterface> LastActor;
 	TScriptInterface<IHighLightInterface> ThisActor;
+	FHitResult CursorHit;
 
 	void AbilityInputTagPressed(const FGameplayTag Tag);
 	void AbilityInputTagReleased(const FGameplayTag Tag);
@@ -66,4 +78,7 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<USplineComponent> Spline;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UDamageTextComponent> DamageTextComponentClass;
 };

@@ -33,6 +33,11 @@ public:
 	FGameplayTag Attribute_Secondary_MaxHealth;
 	FGameplayTag Attribute_Secondary_MaxMana;
 
+	FGameplayTag Attribute_Secondary_ResFire;
+	FGameplayTag Attribute_Secondary_ResLightning;
+	FGameplayTag Attribute_Secondary_ResArcane;
+	FGameplayTag Attribute_Secondary_ResPhysical;
+
 	FGameplayTag Attribute_Vital_Health;
 	FGameplayTag Attribute_Vital_Mana;
 
@@ -42,6 +47,19 @@ public:
 	FGameplayTag InputTag_Action2;
 	FGameplayTag InputTag_Action3;
 	FGameplayTag InputTag_Action4;
+	FGameplayTag InputTag_Shift;
+
+	FGameplayTag Damage;
+	FGameplayTag Damage_Fire;
+	FGameplayTag Damage_Lightning;
+	FGameplayTag Damage_Arcane;
+	FGameplayTag Damage_Physical;
+
+	FGameplayTag Abilities_Attack;
+
+	FGameplayTag Effects_HitReact;
+
+	TMap<FGameplayTag, FGameplayTag> DamageTypesToResistances;
 
 protected:
 
