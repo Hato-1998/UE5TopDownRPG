@@ -10,6 +10,7 @@
 #include "Aura/Aura.h"
 #include "Components/CapsuleComponent.h"
 #include "AuraGameplayTags.h"
+#include "Kismet/GameplayStatics.h"
 
 AAuraCharacterBase::AAuraCharacterBase()
 {
@@ -54,6 +55,8 @@ void AAuraCharacterBase::Die()
 
 void AAuraCharacterBase::MulticastHandleDeath()
 {
+	UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation(), GetActorRotation());
+
 	Weapon->SetSimulatePhysics(true);
 	Weapon->SetEnableGravity(true);
 	Weapon->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
@@ -98,30 +101,43 @@ void AAuraCharacterBase::InitializeDefaultAttributes() const
 	ApplyEffectToSelf(DefaultVitalAttributes, 1.f);
 }
 
-FVector AAuraCharacterBase::GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const
+FVector AAuraCharacterBase::GetCombatSocketLocation_Implementation(const FGameplayTag& SocketTag) const
 {
 	const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
-	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_Weapon) && IsValid(Weapon))
+	if (SocketTag.MatchesTagExact(GameplayTags.CombatSocket_Weapon) && IsValid(Weapon))
 	{
 		for (const FTaggedMontage& TaggedMontage : AttackMontages)
 		{
-			if (TaggedMontage.MontageTag.MatchesTagExact(MontageTag))
+			if (TaggedMontage.SocketTag.MatchesTagExact(SocketTag))
 			{
 				return Weapon->GetSocketLocation(TaggedMontage.SocketName);
 			}
 		}
 	}
-	if (!MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_Weapon))
+	if (!SocketTag.MatchesTagExact(GameplayTags.CombatSocket_Weapon))
 	{
 		for (const FTaggedMontage& TaggedMontage : AttackMontages)
 		{
-			if (TaggedMontage.MontageTag.MatchesTagExact(MontageTag))
+			if (TaggedMontage.SocketTag.MatchesTagExact(SocketTag))
 			{
 				return GetMesh()->GetSocketLocation(TaggedMontage.SocketName);
 			}
 		}
 	}
 	return FVector::ZeroVector;
+}
+
+FTaggedMontage AAuraCharacterBase::GetTaggedMontageByTag_Implementation(const FGameplayTag& MontageTag)
+{
+	for (auto TaggedMontage : AttackMontages)
+	{
+		if (TaggedMontage.MontageTag == MontageTag)
+		{
+			return TaggedMontage;
+		}
+	}
+
+	return FTaggedMontage();
 }
 
 bool AAuraCharacterBase::IsDead_Implementation() const
@@ -137,6 +153,11 @@ AActor* AAuraCharacterBase::GetAvatar_Implementation()
 TArray<FTaggedMontage> AAuraCharacterBase::GetAttackMontages_Implementation() const
 {
 	return AttackMontages;
+}
+
+UNiagaraSystem* AAuraCharacterBase::GetBloodEffect_Implementation()
+{
+	return BloodEffect;
 }
 
 void AAuraCharacterBase::AddCharacterAbilities() const

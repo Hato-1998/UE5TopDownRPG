@@ -75,6 +75,9 @@ void AAuraEnemy::Die()
 {
 	HealthBar->SetVisibility(false);
 	SetLifeSpan(LifeSpan);
+
+	if (AuraAIController) AuraAIController->GetBlackboardComponent()->SetValueAsBool(FName("Dead"), true);
+
 	Super::Die();
 }
 
