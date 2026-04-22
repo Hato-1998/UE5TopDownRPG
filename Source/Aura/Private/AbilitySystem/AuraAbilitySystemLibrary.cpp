@@ -175,11 +175,13 @@ void UAuraAbilitySystemLibrary::GetLivePlayerWithInRadius(const UObject* WorldCo
 
 bool UAuraAbilitySystemLibrary::IsNotFriend(AActor* FirstActor, AActor* SecondActor)
 {
-	const bool bFirstIsPlayer = FirstActor->ActorHasTag(FName("Player"));
-	const bool bSecondIsPlayer = SecondActor->ActorHasTag(FName("Player"));
+	// 1. 둘 다 'Player' 태그를 가지고 있는지 확인
+	const bool bBothArePlayers = FirstActor->ActorHasTag(FName("Player")) && SecondActor->ActorHasTag(FName("Player"));
 
-	const bool bFirstIsEnemy = FirstActor->ActorHasTag(FName("Enemy"));
-	const bool bSecondIsEnemy = SecondActor->ActorHasTag(FName("Enemy"));
+	// 2. 둘 다 'Enemy' 태그를 가지고 있는지 확인
+	const bool bBothAreEnemies = FirstActor->ActorHasTag(FName("Enemy")) && SecondActor->ActorHasTag(FName("Enemy"));
 
-	return bFirstIsPlayer != bSecondIsPlayer && bFirstIsEnemy != bSecondIsEnemy;
+	// 3. 둘 다 플레이어이거나 둘 다 적일 때만 아군(false) 반환,
+	// 그 외의 경우(바위, 맵 오브젝트 등 태그가 없는 대상 포함)는 모두 아군이 아님(true) 반환
+	return !(bBothArePlayers || bBothAreEnemies);
 }
