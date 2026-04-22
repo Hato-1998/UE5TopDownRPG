@@ -54,6 +54,12 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	FTaggedMontage GetTaggedMontageByTag(const FGameplayTag& MontageTag);
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	int32 GetSummonCount() const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void IncrementSummonCount(int32 Amount);
+
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void UpdateFacingTarget(const FVector& Target);
 

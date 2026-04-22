@@ -55,6 +55,10 @@ protected:
 
 	virtual UNiagaraSystem* GetBloodEffect_Implementation() override;
 
+	virtual int32 GetSummonCount_Implementation() const override;
+
+	virtual void IncrementSummonCount_Implementation(int32 Amount) override;
+
 	UPROPERTY()
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 
@@ -95,6 +99,8 @@ protected:
 	USoundBase* DeathSound;
 
 	bool bDead = false;
+
+	int32 SummonCount = 0;
 private:
 
 	UPROPERTY(EditAnywhere, Category = "Abilities")

@@ -160,6 +160,16 @@ UNiagaraSystem* AAuraCharacterBase::GetBloodEffect_Implementation()
 	return BloodEffect;
 }
 
+int32 AAuraCharacterBase::GetSummonCount_Implementation() const
+{
+	return SummonCount;
+}
+
+void AAuraCharacterBase::IncrementSummonCount_Implementation(int32 Amount)
+{
+	SummonCount += Amount;
+}
+
 void AAuraCharacterBase::AddCharacterAbilities() const
 {
 	UAuraAbilitySystemComponent* AuraASC =
