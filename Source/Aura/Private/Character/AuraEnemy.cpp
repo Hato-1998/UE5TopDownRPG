@@ -71,6 +71,11 @@ int32 AAuraEnemy::GetPlayerLevel() const
 	return Level;
 }
 
+int32 AAuraEnemy::GetXPReward_Implementation() const
+{
+	return XPReward.GetValueAtLevel(Level);
+}
+
 void AAuraEnemy::Die()
 {
 	HealthBar->SetVisibility(false);

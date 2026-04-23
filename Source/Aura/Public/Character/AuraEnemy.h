@@ -6,6 +6,7 @@
 #include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "Character/AuraCharacterBase.h"
 #include "Interaction/HighLightInterface.h"
+#include "ScalableFloat.h"
 #include "AuraEnemy.generated.h"
 
 struct FGameplayTag;
@@ -31,6 +32,7 @@ public:
 	virtual void UnHighLightActor() override;
 
 	virtual int32 GetPlayerLevel() const override;
+	virtual int32 GetXPReward_Implementation() const override;
 
 	virtual void Die() override;
 
@@ -61,6 +63,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Class Defaults")
 	ECharacterClass CharacterClass = ECharacterClass::Warrior;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Class Defaults")
+	FScalableFloat XPReward;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UWidgetComponent> HealthBar;

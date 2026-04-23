@@ -8,6 +8,8 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Data/AbilityInfo.h"
+#include "Player/AuraPlayerState.h"
+#include "AbilitySystem/Data/AuraLevelUpInfo.h"
 
 void UOverlayWidgetController::BroadcastInitialValues()
 {
@@ -18,6 +20,17 @@ void UOverlayWidgetController::BroadcastInitialValues()
 
 	OnManaChanged.Broadcast(AuraAttributeSet->GetMana());
 	OnMaxManaChanged.Broadcast(AuraAttributeSet->GetMaxMana());
+
+	if (AAuraPlayerState* AuraPlayerState = Cast<AAuraPlayerState>(PlayerState))
+	{
+		const int32 CurrentLevel = AuraPlayerState->GetPlayerLevel();
+		const int32 CurrentXP = AuraPlayerState->GetXP();
+		OnPlayerLevelChangedDelegate.Broadcast(CurrentLevel);
+		if (const ULevelUpInfo* LevelUpInfo = AuraPlayerState->GetLevelUpInfo())
+		{
+			OnXPPercentChangedDelegate.Broadcast(LevelUpInfo->GetXPBarPercent(CurrentLevel, CurrentXP));
+		}
+	}
 }
 
 void UOverlayWidgetController::BindCallbacksToDependencies()
@@ -78,6 +91,30 @@ void UOverlayWidgetController::BindCallbacksToDependencies()
 						checkf(Row, TEXT("Row not found for tag [%s]"), *AssetTag.ToString());
 						MessageWidgetRowDelegate.Broadcast(*Row);
 					}
+				}
+			});
+	}
+
+	if (AAuraPlayerState* AuraPlayerState = Cast<AAuraPlayerState>(PlayerState))
+	{
+		AuraPlayerState->OnXPChangedDelegate.AddLambda(
+			[this, AuraPlayerState](int32 NewXP)
+			{
+				if (const ULevelUpInfo* LevelUpInfo = AuraPlayerState->GetLevelUpInfo())
+				{
+					const int32 CurrentLevel = AuraPlayerState->GetPlayerLevel();
+					OnXPPercentChangedDelegate.Broadcast(LevelUpInfo->GetXPBarPercent(CurrentLevel, NewXP));
+				}
+			});
+
+		AuraPlayerState->OnLevelChangedDelegate.AddLambda(
+			[this, AuraPlayerState](int32 NewLevel)
+			{
+				OnPlayerLevelChangedDelegate.Broadcast(NewLevel);
+				// 레벨업 시 XP Bar도 재계산 (새 구간 시작)
+				if (const ULevelUpInfo* LevelUpInfo = AuraPlayerState->GetLevelUpInfo())
+				{
+					OnXPPercentChangedDelegate.Broadcast(LevelUpInfo->GetXPBarPercent(NewLevel, AuraPlayerState->GetXP()));
 				}
 			});
 	}
