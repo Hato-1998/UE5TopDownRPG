@@ -6,6 +6,8 @@
 #include "UObject/Object.h"
 #include "AuraWidgetController.generated.h"
 
+class APlayerController;
+class APlayerState;
 class UAttributeSet;
 class UAbilitySystemComponent;
 
