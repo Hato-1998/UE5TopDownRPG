@@ -69,6 +69,9 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	/*
 	* Input Tag
 	*/
+	GameplayTags.Input = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Input"), FString("Parent tag for input categories"));
+
 	GameplayTags.InputTag_LMB = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Input.Mouse.LMB"), FString("Input Tag for Left Mouse Button"));
 
@@ -151,6 +154,8 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	/*
 	 * Abilities
 	 */
+	GameplayTags.Abilities = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Abilities"), FString("Parent tag for ability categories"));
 
 	GameplayTags.Abilities_Attack = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("Abilities.Attack"), FString("Attack Abilities Tag"));
@@ -197,5 +202,11 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	FName("Montage.Attack_3"), FString("Montage Attack Tag"));
 	GameplayTags.Montage_Attack_4 = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("Montage.Attack_4"), FString("Montage Attack Tag"));
+
+	/*
+	 * Message
+	 */
+	GameplayTags.Message = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Message"), FString("Parent tag for message types"));
 
 }

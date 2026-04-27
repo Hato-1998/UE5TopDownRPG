@@ -3,6 +3,7 @@
 
 #include "UI/Widget/OverlayWidgetController.h"
 
+#include "AuraGameplayTags.h"
 #include "AttributeSet.h"
 #include "Engine/DataTable.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
@@ -84,8 +85,7 @@ void UOverlayWidgetController::BindCallbacksToDependencies()
 				{
 					//expanding out parent tags "A.1".MatchesTag("A") will return True, "A".MatchesTag("A.1") will return False
 					//해당 Tag가 포함되어 있는가를 확인할 때, 상위 계층의 태그를 검색하면 True를 반환하지만, 하위 계층의 태그는 false 반환
-					FGameplayTag MessageTag = FGameplayTag::RequestGameplayTag(FName("Message"));
-					if (AssetTag.MatchesTag(MessageTag))
+					if (AssetTag.MatchesTag(FAuraGameplayTags::Get().Message))
 					{
 						FUIWidgetRow* Row = GetDataTableRowByTag<FUIWidgetRow>(MessageWidgetDataTable, AssetTag);
 						checkf(Row, TEXT("Row not found for tag [%s]"), *AssetTag.ToString());
@@ -111,6 +111,7 @@ void UOverlayWidgetController::BindCallbacksToDependencies()
 			[this, AuraPlayerState](int32 NewLevel)
 			{
 				OnPlayerLevelChangedDelegate.Broadcast(NewLevel);
+
 				// 레벨업 시 XP Bar도 재계산 (새 구간 시작)
 				if (const ULevelUpInfo* LevelUpInfo = AuraPlayerState->GetLevelUpInfo())
 				{

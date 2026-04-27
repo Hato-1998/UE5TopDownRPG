@@ -26,8 +26,17 @@ public:
 	/*
 	 * Player Interface
 	 */
+
+	virtual int32 GetXP_Implementation() const override;
+	virtual int32 FindLevelForXP_Implementation(int32 XP) const override;
+	virtual int32 GetAttributePointsReward_Implementation(int32 Level) const override;
+	virtual int32 GetSpellPointsReward_Implementation(int32 Level) const override;
+
 	virtual void AddToXP_Implementation(int32 XP) override;
-	virtual void LevelUp_Implementation(int32 XP) override;
+	virtual void AddToAttributePoints_Implementation(int32 XP) override;
+	virtual void AddToSpellPoints_Implementation(int32 XP) override;
+	virtual void AddToLevel_Implementation(int32 NumLevelUp) override;
+	virtual void LevelUp_Implementation() override;
 
 private:
 	virtual void InitAbilityActorInfo() override;

@@ -79,6 +79,12 @@ public:
 	FGameplayTag Montage_Attack_3;
 	FGameplayTag Montage_Attack_4;
 
+	/*
+	 * Root Category Tags (for MatchesTag comparisons)
+	 */
+	FGameplayTag Abilities;
+	FGameplayTag Input;
+	FGameplayTag Message;
 
 	FGameplayTag Effects_HitReact;
 

@@ -94,7 +94,7 @@ FGameplayTag UAuraAbilitySystemComponent::GetAbilityTagFromSpec(const FGameplayA
 	{
 		for (FGameplayTag Tag : Spec.Ability->GetAssetTags())
 		{
-			if (Tag.MatchesTag(FGameplayTag::RequestGameplayTag(FName("Abilities"))))
+			if (Tag.MatchesTag(FAuraGameplayTags::Get().Abilities))
 			{
 				return Tag;
 			}
@@ -108,7 +108,7 @@ FGameplayTag UAuraAbilitySystemComponent::GetInputTagFromSpec(const FGameplayAbi
 {
 	for (FGameplayTag Tag : Spec.GetDynamicSpecSourceTags())
 	{
-		if (Tag.MatchesTag(FGameplayTag::RequestGameplayTag(FName("Input"))))
+		if (Tag.MatchesTag(FAuraGameplayTags::Get().Input))
 		{
 			return Tag;
 		}
