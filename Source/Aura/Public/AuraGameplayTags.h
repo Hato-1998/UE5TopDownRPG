@@ -41,6 +41,8 @@ public:
 	FGameplayTag Attribute_Vital_Health;
 	FGameplayTag Attribute_Vital_Mana;
 
+	FGameplayTag Attribute_Meta_IncomingXP;
+
 	FGameplayTag InputTag_LMB;
 	FGameplayTag InputTag_RMB;
 	FGameplayTag InputTag_Action1;
@@ -56,6 +58,33 @@ public:
 	FGameplayTag Damage_Physical;
 
 	FGameplayTag Abilities_Attack;
+	FGameplayTag Abilities_Summon;
+
+	FGameplayTag Abilities_Fire_FireBolt;
+	FGameplayTag Cooldown_Fire_FireBolt;
+
+	/*
+	 * CombatSocket
+	 */
+	FGameplayTag CombatSocket_Weapon;
+	FGameplayTag CombatSocket_RightHand;
+	FGameplayTag CombatSocket_LeftHand;
+	FGameplayTag CombatSocket_Tail;
+
+	/*
+	 * Montage Tags
+	 */
+	FGameplayTag Montage_Attack_1;
+	FGameplayTag Montage_Attack_2;
+	FGameplayTag Montage_Attack_3;
+	FGameplayTag Montage_Attack_4;
+
+	/*
+	 * Root Category Tags (for MatchesTag comparisons)
+	 */
+	FGameplayTag Abilities;
+	FGameplayTag Input;
+	FGameplayTag Message;
 
 	FGameplayTag Effects_HitReact;
 

@@ -71,8 +71,12 @@ void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutio
 	AActor* SourceAvatarActor = SourceASC->GetAvatarActor();
 	AActor* TargetAvatarActor = TargetASC->GetAvatarActor();
 
-	ICombatInterface* SourceCombatInterface = Cast<ICombatInterface>(SourceAvatarActor);
-	ICombatInterface* TargetCombatInterface = Cast<ICombatInterface>(TargetAvatarActor);
+	const int32 SourcePlayerLevel = (SourceAvatarActor && SourceAvatarActor->Implements<UCombatInterface>())
+		? ICombatInterface::Execute_GetPlayerLevel(SourceAvatarActor)
+		: 1;
+	const int32 TargetPlayerLevel = (TargetAvatarActor && TargetAvatarActor->Implements<UCombatInterface>())
+		? ICombatInterface::Execute_GetPlayerLevel(TargetAvatarActor)
+		: 1;
 
 	const FGameplayEffectSpec& Spec = ExecutionParams.GetOwningSpec();
 
@@ -157,10 +161,10 @@ void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutio
 	UCharacterClassInfo* CharacterClassInfo = UAuraAbilitySystemLibrary::GetCharacterClassInfo(SourceAvatarActor);
 
 	FRealCurve* ArmorPenetrationCurve = CharacterClassInfo->DamageCalcCurveTable->FindCurve(FName("ArmorPenetration"), FString());
-	const float ArmorPenetrationCoefficient = ArmorPenetrationCurve->Eval(SourceCombatInterface->GetPlayerLevel());
+	const float ArmorPenetrationCoefficient = ArmorPenetrationCurve->Eval(SourcePlayerLevel);
 
 	FRealCurve* EffectiveArmorCurve = CharacterClassInfo->DamageCalcCurveTable->FindCurve(FName("EffectiveArmor"), FString());
-	const float EffectiveArmorCoefficient = EffectiveArmorCurve->Eval(TargetCombatInterface->GetPlayerLevel());
+	const float EffectiveArmorCoefficient = EffectiveArmorCurve->Eval(TargetPlayerLevel);
 
 	TargetArmor = (TargetArmor * EffectiveArmorCoefficient) - (SourceArmorPenetration * ArmorPenetrationCoefficient);
 	TargetArmor = FMath::Max(TargetArmor, 0.f);

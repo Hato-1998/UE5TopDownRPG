@@ -9,6 +9,9 @@
 
 class UAbilitySystemComponent;
 class UAttributeSet;
+class ULevelUpInfo;
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnPlayerStatChanged, int32 /*StatValue*/);
 
 /**
  *
@@ -27,12 +30,27 @@ public:
 
 	FORCEINLINE	int32 GetPlayerLevel() const { return Level; }
 
+	FORCEINLINE int32 GetXP() const { return XP; }
+	FORCEINLINE ULevelUpInfo* GetLevelUpInfo() const { return LevelUpInfo; }
+
+	void SetXP(int32 InXP);
+	void AddToXP(int32 InXP);
+
+	void SetLevel(int32 InLevel);
+	void AddToLevel(int32 InLevel);
+
+	FOnPlayerStatChanged OnXPChangedDelegate;
+	FOnPlayerStatChanged OnLevelChangedDelegate;
+
 protected:
 	UPROPERTY(EditAnywhere, Category = "AbilitySystem")
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 
 	UPROPERTY(EditAnywhere, Category = "AbilitySystem")
 	TObjectPtr<UAttributeSet> AttributeSet;
+
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<ULevelUpInfo> LevelUpInfo;
 
 private:
 
@@ -41,5 +59,11 @@ private:
 
 	UFUNCTION()
 	void OnRep_Level(int32 OldLevel);
+
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_XP, Category = "PlayerState")
+	int32 XP = 0;
+
+	UFUNCTION()
+	void OnRep_XP(int32 OldXP);
 
 };

@@ -9,6 +9,7 @@
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AI/AuraAIController.h"
+#include "AI/AuraAIBlackboardKeys.h"
 #include "Aura/Aura.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -46,8 +47,8 @@ void AAuraEnemy::PossessedBy(AController* NewController)
 
 	AuraAIController->GetBlackboardComponent()->InitializeBlackboard(*BehaviorTree->BlackboardAsset);
 	AuraAIController->RunBehaviorTree(BehaviorTree);
-	AuraAIController->GetBlackboardComponent()->SetValueAsBool(FName("HitReacting"), false);
-	AuraAIController->GetBlackboardComponent()->SetValueAsBool(FName("RangedAttacker"), CharacterClass != ECharacterClass::Warrior);
+	AuraAIController->GetBlackboardComponent()->SetValueAsBool(AuraBBKeys::HitReacting, false);
+	AuraAIController->GetBlackboardComponent()->SetValueAsBool(AuraBBKeys::RangedAttacker, CharacterClass != ECharacterClass::Warrior);
 }
 
 void AAuraEnemy::HighLightActor()
@@ -66,15 +67,23 @@ void AAuraEnemy::UnHighLightActor()
 	Weapon->SetRenderCustomDepth(false);
 }
 
-int32 AAuraEnemy::GetPlayerLevel() const
+int32 AAuraEnemy::GetPlayerLevel_Implementation() const
 {
 	return Level;
+}
+
+int32 AAuraEnemy::GetXPReward_Implementation() const
+{
+	return XPReward.GetValueAtLevel(Level);
 }
 
 void AAuraEnemy::Die()
 {
 	HealthBar->SetVisibility(false);
 	SetLifeSpan(LifeSpan);
+
+	if (AuraAIController) AuraAIController->GetBlackboardComponent()->SetValueAsBool(AuraBBKeys::Dead, true);
+
 	Super::Die();
 }
 
@@ -134,7 +143,10 @@ void AAuraEnemy::HitReactTagChanged(const FGameplayTag CallbackTag, int32 NewCou
 
 	GetCharacterMovement()->MaxWalkSpeed = bHitReacting ? 0.f :BaseWalkSpeed;
 
-	AuraAIController->GetBlackboardComponent()->SetValueAsBool(FName("HitReacting"), bHitReacting);
+	if (AuraAIController && AuraAIController->GetBlackboardComponent())
+	{
+		AuraAIController->GetBlackboardComponent()->SetValueAsBool(AuraBBKeys::HitReacting, bHitReacting);
+	}
 }
 
 void AAuraEnemy::InitializeDefaultAttributes() const
