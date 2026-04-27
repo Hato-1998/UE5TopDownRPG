@@ -6,7 +6,6 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Net/UnrealNetwork.h"
-#include "AbilitySystem/Data/AuraLevelUpInfo.h"
 
 AAuraPlayerState::AAuraPlayerState()
 {
@@ -25,6 +24,8 @@ void AAuraPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(AAuraPlayerState, Level);
 	DOREPLIFETIME(AAuraPlayerState, XP);
+	DOREPLIFETIME(AAuraPlayerState, AP);
+	DOREPLIFETIME(AAuraPlayerState, SP);
 }
 
 UAbilitySystemComponent* AAuraPlayerState::GetAbilitySystemComponent() const
@@ -34,6 +35,7 @@ UAbilitySystemComponent* AAuraPlayerState::GetAbilitySystemComponent() const
 
 void AAuraPlayerState::OnRep_Level(int32 OldLevel)
 {
+
 }
 
 void AAuraPlayerState::SetXP(int32 InXP)
@@ -64,7 +66,45 @@ void AAuraPlayerState::AddToLevel(int32 InLevel)
 	OnLevelChangedDelegate.Broadcast(Level);
 }
 
-void AAuraPlayerState::OnRep_XP(int32 OldXP)
+void AAuraPlayerState::SetAttributePoints(int32 InAP)
+{
+	if (!HasAuthority()) return;
+	AP = InAP;
+	OnAttributePointsChangedDelegate.Broadcast(AP);
+}
+
+void AAuraPlayerState::AddToAttributePoints(int32 InAP)
+{
+	if (!HasAuthority()) return;
+	AP += InAP;
+	OnAttributePointsChangedDelegate.Broadcast(AP);
+}
+
+void AAuraPlayerState::SetSpellPoints(int32 InSP)
+{
+	if (!HasAuthority()) return;
+	SP = InSP;
+	OnSpellPointsChangedDelegate.Broadcast(SP);
+}
+
+void AAuraPlayerState::AddToSpellPoints(int32 InSP)
+{
+	if (!HasAuthority()) return;
+	SP += InSP;
+	OnSpellPointsChangedDelegate.Broadcast(SP);
+}
+
+void AAuraPlayerState::OnRep_XP(int32 OldXP) const
 {
 	OnXPChangedDelegate.Broadcast(XP);
+}
+
+void AAuraPlayerState::OnRep_AP(int32 OldAP) const
+{
+	OnAttributePointsChangedDelegate.Broadcast(AP);
+}
+
+void AAuraPlayerState::OnRep_SP(int32 OldSP) const
+{
+	OnSpellPointsChangedDelegate.Broadcast(SP);
 }

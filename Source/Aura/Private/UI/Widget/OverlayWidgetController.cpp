@@ -27,6 +27,7 @@ void UOverlayWidgetController::BroadcastInitialValues()
 		const int32 CurrentLevel = AuraPlayerState->GetPlayerLevel();
 		const int32 CurrentXP = AuraPlayerState->GetXP();
 		OnPlayerLevelChangedDelegate.Broadcast(CurrentLevel);
+
 		if (const ULevelUpInfo* LevelUpInfo = AuraPlayerState->GetLevelUpInfo())
 		{
 			OnXPPercentChangedDelegate.Broadcast(LevelUpInfo->GetXPBarPercent(CurrentLevel, CurrentXP));

@@ -36,6 +36,10 @@ public:
 	static FGameplayTag GetAbilityTagFromSpec(const FGameplayAbilitySpec& Spec);
 	static FGameplayTag GetInputTagFromSpec(const FGameplayAbilitySpec& Spec);
 
+	void UpgradeAttributePoints(const FGameplayTag& AttributeTag);
+
+	void ServerUpgradeAttribute(const FGameplayTag& AttributeTag);
+
 protected:
 
 	UFUNCTION(Client, Reliable)

@@ -33,14 +33,25 @@ public:
 	FORCEINLINE int32 GetXP() const { return XP; }
 	FORCEINLINE ULevelUpInfo* GetLevelUpInfo() const { return LevelUpInfo; }
 
+	FORCEINLINE int32 GetAttributePoints() const { return AP; }
+	FORCEINLINE int32 GetSpellPoints() const { return SP; }
+
 	void SetXP(int32 InXP);
 	void AddToXP(int32 InXP);
 
 	void SetLevel(int32 InLevel);
 	void AddToLevel(int32 InLevel);
 
+	void SetAttributePoints(int32 InAP);
+	void AddToAttributePoints(int32 InAP);
+
+	void SetSpellPoints(int32 InSP);
+	void AddToSpellPoints(int32 InSP);
+
 	FOnPlayerStatChanged OnXPChangedDelegate;
 	FOnPlayerStatChanged OnLevelChangedDelegate;
+	FOnPlayerStatChanged OnAttributePointsChangedDelegate;
+	FOnPlayerStatChanged OnSpellPointsChangedDelegate;
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "AbilitySystem")
@@ -49,7 +60,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "AbilitySystem")
 	TObjectPtr<UAttributeSet> AttributeSet;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditAnywhere, Category = "AbilitySystem")
 	TObjectPtr<ULevelUpInfo> LevelUpInfo;
 
 private:
@@ -57,13 +68,25 @@ private:
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Level, Category = "PlayerState")
 	int32 Level = 1;
 
-	UFUNCTION()
-	void OnRep_Level(int32 OldLevel);
-
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_XP, Category = "PlayerState")
 	int32 XP = 0;
 
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_AP, Category = "PlayerState")
+	int32 AP = 0;
+
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_SP, Category = "PlayerState")
+	int32 SP = 0;
+
 	UFUNCTION()
-	void OnRep_XP(int32 OldXP);
+	void OnRep_Level(int32 OldLevel);
+
+	UFUNCTION()
+	void OnRep_XP(int32 OldXP) const;
+
+	UFUNCTION()
+	void OnRep_AP(int32 OldAP) const;
+
+	UFUNCTION()
+	void OnRep_SP(int32 OldSP) const;
 
 };
