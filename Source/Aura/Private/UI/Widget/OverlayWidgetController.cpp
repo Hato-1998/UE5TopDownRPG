@@ -14,72 +14,89 @@
 
 void UOverlayWidgetController::BroadcastInitialValues()
 {
-	const UAuraAttributeSet* AuraAttributeSet = CastChecked<UAuraAttributeSet>(AttributeSet);
+	OnHealthChanged.Broadcast(GetAuraAS()->GetHealth());
+	OnMaxHealthChanged.Broadcast(GetAuraAS()->GetMaxHealth());
 
-	OnHealthChanged.Broadcast(AuraAttributeSet->GetHealth());
-	OnMaxHealthChanged.Broadcast(AuraAttributeSet->GetMaxHealth());
+	OnManaChanged.Broadcast(GetAuraAS()->GetMana());
+	OnMaxManaChanged.Broadcast(GetAuraAS()->GetMaxMana());
 
-	OnManaChanged.Broadcast(AuraAttributeSet->GetMana());
-	OnMaxManaChanged.Broadcast(AuraAttributeSet->GetMaxMana());
 
-	if (AAuraPlayerState* AuraPlayerState = Cast<AAuraPlayerState>(PlayerState))
+	const int32 CurrentLevel = GetAuraPS()->GetPlayerLevel();
+	const int32 CurrentXP = GetAuraPS()->GetXP();
+	OnPlayerLevelChangedDelegate.Broadcast(CurrentLevel);
+
+	if (const ULevelUpInfo* LevelUpInfo = GetAuraPS()->GetLevelUpInfo())
 	{
-		const int32 CurrentLevel = AuraPlayerState->GetPlayerLevel();
-		const int32 CurrentXP = AuraPlayerState->GetXP();
-		OnPlayerLevelChangedDelegate.Broadcast(CurrentLevel);
-
-		if (const ULevelUpInfo* LevelUpInfo = AuraPlayerState->GetLevelUpInfo())
-		{
-			OnXPPercentChangedDelegate.Broadcast(LevelUpInfo->GetXPBarPercent(CurrentLevel, CurrentXP));
-		}
+		OnXPPercentChangedDelegate.Broadcast(LevelUpInfo->GetXPBarPercent(CurrentLevel, CurrentXP));
 	}
 }
 
 void UOverlayWidgetController::BindCallbacksToDependencies()
 {
-	const UAuraAttributeSet* AuraAttributeSet = CastChecked<UAuraAttributeSet>(AttributeSet);
+	GetAuraPS()->OnXPChangedDelegate.AddLambda(
+		[this](int32 NewXP)
+		{
+			if (const ULevelUpInfo* LevelUpInfo = GetAuraPS()->GetLevelUpInfo())
+			{
+				const int32 CurrentLevel = GetAuraPS()->GetPlayerLevel();
+				OnXPPercentChangedDelegate.Broadcast(LevelUpInfo->GetXPBarPercent(CurrentLevel, NewXP));
+			}
+		});
+
+	GetAuraPS()->OnLevelChangedDelegate.AddLambda(
+		[this](int32 NewLevel)
+		{
+			OnPlayerLevelChangedDelegate.Broadcast(NewLevel);
+
+			// 레벨업 시 XP Bar도 재계산 (새 구간 시작)
+			if (const ULevelUpInfo* LevelUpInfo = GetAuraPS()->GetLevelUpInfo())
+			{
+				OnXPPercentChangedDelegate.Broadcast(
+					LevelUpInfo->GetXPBarPercent(NewLevel, GetAuraPS()->GetXP()));
+			}
+		});
 
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
-		AuraAttributeSet->GetHealthAttribute()).AddLambda(
+		GetAuraAS()->GetHealthAttribute()).AddLambda(
 		[this](const FOnAttributeChangeData& Data)
 		{
 			OnHealthChanged.Broadcast(Data.NewValue);
 		});
 
-
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
-		AuraAttributeSet->GetMaxHealthAttribute()).AddLambda(
+		GetAuraAS()->GetMaxHealthAttribute()).AddLambda(
 		[this](const FOnAttributeChangeData& Data)
 		{
 			OnMaxHealthChanged.Broadcast(Data.NewValue);
 		});
 
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
-		AuraAttributeSet->GetManaAttribute()).AddLambda(
+		GetAuraAS()->GetManaAttribute()).AddLambda(
 		[this](const FOnAttributeChangeData& Data)
 		{
 			OnManaChanged.Broadcast(Data.NewValue);
 		});
 
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
-		AuraAttributeSet->GetMaxManaAttribute()).AddLambda(
+		GetAuraAS()->GetMaxManaAttribute()).AddLambda(
 		[this](const FOnAttributeChangeData& Data)
 		{
 			OnMaxManaChanged.Broadcast(Data.NewValue);
 		});
 
-	if (UAuraAbilitySystemComponent* AuraASC = CastChecked<UAuraAbilitySystemComponent>(AbilitySystemComponent))
+	if (GetAuraASC())
 	{
-		if (AuraASC->bStartupAbilitiesGiven)
+		if (GetAuraASC()->bStartupAbilitiesGiven)
 		{
-			OnInitializeStartupAbilities(AuraASC);
+			BroadcastAbilityInfo();
 		}
 		else
 		{
-			AuraASC->AbilitiesGivenDelegate.AddUObject(this, &UOverlayWidgetController::OnInitializeStartupAbilities);
+			GetAuraASC()->AbilitiesGivenDelegate.AddUObject(
+				this, &UOverlayWidgetController::BroadcastAbilityInfo);
 		}
 
-		AuraASC->EffectAssetTags.AddLambda(
+		GetAuraASC()->EffectAssetTags.AddLambda(
 			[this](const FGameplayTagContainer& AssetTags)
 			{
 				for (const FGameplayTag& AssetTag : AssetTags)
@@ -95,43 +112,4 @@ void UOverlayWidgetController::BindCallbacksToDependencies()
 				}
 			});
 	}
-
-	if (AAuraPlayerState* AuraPlayerState = Cast<AAuraPlayerState>(PlayerState))
-	{
-		AuraPlayerState->OnXPChangedDelegate.AddLambda(
-			[this, AuraPlayerState](int32 NewXP)
-			{
-				if (const ULevelUpInfo* LevelUpInfo = AuraPlayerState->GetLevelUpInfo())
-				{
-					const int32 CurrentLevel = AuraPlayerState->GetPlayerLevel();
-					OnXPPercentChangedDelegate.Broadcast(LevelUpInfo->GetXPBarPercent(CurrentLevel, NewXP));
-				}
-			});
-
-		AuraPlayerState->OnLevelChangedDelegate.AddLambda(
-			[this, AuraPlayerState](int32 NewLevel)
-			{
-				OnPlayerLevelChangedDelegate.Broadcast(NewLevel);
-
-				// 레벨업 시 XP Bar도 재계산 (새 구간 시작)
-				if (const ULevelUpInfo* LevelUpInfo = AuraPlayerState->GetLevelUpInfo())
-				{
-					OnXPPercentChangedDelegate.Broadcast(LevelUpInfo->GetXPBarPercent(NewLevel, AuraPlayerState->GetXP()));
-				}
-			});
-	}
-}
-
-void UOverlayWidgetController::OnInitializeStartupAbilities(UAuraAbilitySystemComponent* AuraASC) const
-{
-	if (!AuraASC->bStartupAbilitiesGiven) return;
-
-	FForEachAbility BroadcastDelegate;
-	BroadcastDelegate.BindLambda([this, AuraASC](const FGameplayAbilitySpec& AbilitySpec)
-	{
-		FAuraAbilityInfo Info = AbilityInfo->FindAbilityInfoForTag(AuraASC->GetAbilityTagFromSpec(AbilitySpec));
-		Info.InputTag = AuraASC->GetInputTagFromSpec(AbilitySpec);
-		AbilityInfoInitializedDelegate.Broadcast(Info);
-	});
-	AuraASC->ForEachAbility(BroadcastDelegate);
 }
