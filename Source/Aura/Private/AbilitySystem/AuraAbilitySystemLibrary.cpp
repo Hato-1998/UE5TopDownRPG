@@ -54,6 +54,17 @@ UAttributeWidgetMenuController* UAuraAbilitySystemLibrary::GetAttributeWidgetMen
 	return nullptr;
 }
 
+USpellMenuWidgetController* UAuraAbilitySystemLibrary::GetSpellWidgetMenuController(const UObject* WorldContextObject)
+{
+	FWidgetControllerParams Params;
+	AAuraHUD* AuraHUD;
+	if (MakeWidgetControllerParams(WorldContextObject, Params, AuraHUD))
+	{
+		return AuraHUD->GetSpellWidgetMenuController(Params);
+	}
+	return nullptr;
+}
+
 void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* WorldContextObject, ECharacterClass CharacterClass, float Level, UAbilitySystemComponent* ASC)
 {
 	AActor* AvatarActor = ASC->GetAvatarActor();
