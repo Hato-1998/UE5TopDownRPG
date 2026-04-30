@@ -78,7 +78,7 @@ private:
 	int32 SP = 0;
 
 	UFUNCTION()
-	void OnRep_Level(int32 OldLevel);
+	void OnRep_Level(int32 OldLevel) const;
 
 	UFUNCTION()
 	void OnRep_XP(int32 OldXP) const;

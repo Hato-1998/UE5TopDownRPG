@@ -163,6 +163,9 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	GameplayTags.Abilities = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Abilities"), FString("Parent tag for ability categories"));
 
+	GameplayTags.Abilities_None = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Abilities.None"), FString("None Abilities Tag"));
+
 	GameplayTags.Abilities_Attack = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("Abilities.Attack"), FString("Attack Abilities Tag"));
 
@@ -171,6 +174,9 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 
 	GameplayTags.Abilities_Fire_FireBolt = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("Abilities.Fire.FireBolt"), FString("Fire Bolt Abilities Tag"));
+
+	GameplayTags.Abilities_Lightning_Electrocute = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Abilities.Lightning.Electrocute"), FString("Electrocute Abilities Tag"));
 
 	GameplayTags.Abilities_HitReact = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("Abilities.HitReact"), FString("HitReact Abilities Tag"));

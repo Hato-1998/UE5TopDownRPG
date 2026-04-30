@@ -62,12 +62,13 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	virtual void BroadcastInitialValues();
+
 	virtual void BindCallbacksToDependencies();
 
 	void BroadcastAbilityInfo();
 
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Messages")
-	FAbilityInfoSignatrue AbilityInfoInitializedDelegate;
+	FAbilityInfoSignatrue AbilityInfoDelegate;
 protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = "WidgetController")

@@ -20,7 +20,6 @@ void UAttributeWidgetMenuController::BroadcastInitialValues()
 	if (GetAuraPS())
 	{
 		OnAttributePointsChangedDelegate.Broadcast(GetAuraPS()->GetAttributePoints());
-		OnSpellPointsChangedDelegate.Broadcast(GetAuraPS()->GetSpellPoints());
 	}
 }
 
@@ -42,12 +41,6 @@ void UAttributeWidgetMenuController::BindCallbacksToDependencies()
 			[this](int32 NewAttributePoints)
 			{
 				OnAttributePointsChangedDelegate.Broadcast(NewAttributePoints);
-			});
-
-		GetAuraPS()->OnSpellPointsChangedDelegate.AddLambda(
-			[this](int32 NewSpellPoints)
-			{
-				OnSpellPointsChangedDelegate.Broadcast(NewSpellPoints);
 			});
 	}
 }
