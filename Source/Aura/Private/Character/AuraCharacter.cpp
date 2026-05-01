@@ -94,14 +94,18 @@ int32 AAuraCharacter::GetAttributePointsReward_Implementation(int32 Level) const
 {
 	AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>();
 	check(AuraPlayerState);
-	return AuraPlayerState->GetLevelUpInfo()->LevelUpInformation[Level].AttributePointReward;
+	const ULevelUpInfo* Info = AuraPlayerState->GetLevelUpInfo();
+	checkf(Info, TEXT("LevelUpInfo not set on %s"), *AuraPlayerState->GetName());
+	return Info->LevelUpInformation.IsValidIndex(Level) ? Info->LevelUpInformation[Level].AttributePointReward : 0;
 }
 
 int32 AAuraCharacter::GetSpellPointsReward_Implementation(int32 Level) const
 {
 	AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>();
 	check(AuraPlayerState);
-	return AuraPlayerState->GetLevelUpInfo()->LevelUpInformation[Level].SpellPointReward;
+	const ULevelUpInfo* Info = AuraPlayerState->GetLevelUpInfo();
+	checkf(Info, TEXT("LevelUpInfo not set on %s"), *AuraPlayerState->GetName());
+	return Info->LevelUpInformation.IsValidIndex(Level) ? Info->LevelUpInformation[Level].SpellPointReward : 0;
 }
 
 int32 AAuraCharacter::GetAttributePoints_Implementation() const
@@ -181,5 +185,8 @@ void AAuraCharacter::InitAbilityActorInfo()
 		}
 	}
 
-	InitializeDefaultAttributes();
+	if (HasAuthority())
+	{
+		InitializeDefaultAttributes();
+	}
 }

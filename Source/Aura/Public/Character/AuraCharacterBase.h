@@ -12,6 +12,10 @@ class UAbilitySystemComponent;
 class UAttributeSet;
 class UGameplayEffect;
 class UGameplayAbility;
+class UMaterialInstance;
+class UMaterialInstanceDynamic;
+class UNiagaraSystem;
+class USoundBase;
 
 UCLASS(Abstract)
 class AURA_API AAuraCharacterBase : public ACharacter, public IAbilitySystemInterface, public ICombatInterface

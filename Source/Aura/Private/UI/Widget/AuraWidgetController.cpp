@@ -29,7 +29,9 @@ void UAuraWidgetController::BindCallbacksToDependencies()
 
 void UAuraWidgetController::BroadcastAbilityInfo()
 {
-	if (!GetAuraASC()->bStartupAbilitiesGiven) return;
+	if (!AbilityInfo) return;
+	UAuraAbilitySystemComponent* AuraASC = GetAuraASC();
+	if (!AuraASC || !AuraASC->bStartupAbilitiesGiven) return;
 
 	FForEachAbility BroadcastDelegate;
 	BroadcastDelegate.BindLambda([this](const FGameplayAbilitySpec& AbilitySpec)
