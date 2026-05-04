@@ -21,7 +21,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void CauseDamage(AActor* TargetActor);
 
-	FDamageEffectParams MakeDamageEffectParamsFromClassDefaults(AActor* TargetActor) const;
+	FDamageEffectParams MakeDamageEffectParamsFromClassDefaults(AActor* TargetActor = nullptr) const;
 protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
