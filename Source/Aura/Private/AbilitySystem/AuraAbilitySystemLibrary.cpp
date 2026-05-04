@@ -3,8 +3,10 @@
 
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "AuraAbilityTypes.h"
+#include "AuraGameplayTags.h"
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "Engine/OverlapResult.h"
 #include "Engine/Engine.h"
@@ -143,6 +145,33 @@ UAbilityInfo* UAuraAbilitySystemLibrary::GetAbilityInfo(const UObject* WorldCont
 	if (AuraGameMode == nullptr) return nullptr;
 
 	return AuraGameMode->AbilityInfo;
+}
+
+FGameplayEffectContextHandle UAuraAbilitySystemLibrary::ApplyGameplayEffect(FDamageEffectParams Params)
+{
+	if (Params.SourceAbilitySystemComponent == nullptr || Params.TargetAbilitySystemComponent == nullptr) return FGameplayEffectContextHandle();
+	if (Params.DamageEffectClass == nullptr) return FGameplayEffectContextHandle();
+
+	FGameplayEffectContextHandle EffectContext = Params.SourceAbilitySystemComponent->MakeEffectContext();
+	EffectContext.AddSourceObject(Params.SourceAbilitySystemComponent->GetAvatarActor());
+
+	const FGameplayEffectSpecHandle SpecHandle = Params.SourceAbilitySystemComponent->MakeOutgoingSpec(
+		Params.DamageEffectClass,
+		Params.AbilityLevel,
+		EffectContext);
+
+	if (!SpecHandle.IsValid()) return FGameplayEffectContextHandle();
+
+	const FAuraGameplayTags& Tags = FAuraGameplayTags::Get();
+	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, Params.DamageType, Params.BaseDamage);
+	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, Tags.Debuff_Chance, Params.DebuffChance);
+	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, Tags.Debuff_Damage, Params.DebuffDamage);
+	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, Tags.Debuff_Duration, Params.DebuffDuration);
+	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, Tags.Debuff_Frequency, Params.DebuffFrequency);
+
+	Params.TargetAbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+
+	return EffectContext;
 }
 
 bool UAuraAbilitySystemLibrary::IsBlockedHit(const FGameplayEffectContextHandle& EffectContextHandle)
