@@ -62,8 +62,38 @@ UExecCalcDamage::UExecCalcDamage()
 	RelevantAttributesToCapture.Add(DamageStatics().ResPhysicalDef);
 }
 
+void UExecCalcDamage::DetermineDebuff(const FGameplayEffectSpec& Spec, const FAuraGameplayTags& Tags) const
+{
+	for (const TTuple<FGameplayTag, FGameplayTag>& Pair : Tags.DamageTypesToDebuffs)
+	{
+		const FGameplayTag& DamageType = Pair.Key;
+
+		const float DamageTypeMag = Spec.GetSetByCallerMagnitude(DamageType, false, -1.f);
+		if (DamageTypeMag <= -.5f) continue;
+
+		const float SourceDebuffChance = Spec.GetSetByCallerMagnitude(Tags.Debuff_Chance, false, 0.f);
+		const bool bDebuff = FMath::FRandRange(0.f, 100.f) <= SourceDebuffChance;
+		if (!bDebuff) continue;
+
+		FGameplayEffectContextHandle ContextHandle = Spec.GetContext();
+
+		UAuraAbilitySystemLibrary::SetIsSuccessfulDebuff(ContextHandle, true);
+		UAuraAbilitySystemLibrary::SetDamageType(ContextHandle, DamageType);
+
+		const float DebuffDamage = Spec.GetSetByCallerMagnitude(Tags.Debuff_Damage, false, 0.f);
+		const float DebuffDuration = Spec.GetSetByCallerMagnitude(Tags.Debuff_Duration, false, 0.f);
+		const float DebuffFrequency = Spec.GetSetByCallerMagnitude(Tags.Debuff_Frequency, false, 0.f);
+
+		UAuraAbilitySystemLibrary::SetDebuffDamage(ContextHandle, DebuffDamage);
+		UAuraAbilitySystemLibrary::SetDebuffDuration(ContextHandle, DebuffDuration);
+		UAuraAbilitySystemLibrary::SetDebuffFrequency(ContextHandle, DebuffFrequency);
+
+		break;
+	}
+}
+
 void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams,
-	FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const
+                                             FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const
 {
 	const UAbilitySystemComponent* SourceASC = ExecutionParams.GetSourceAbilitySystemComponent();
 	const UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
@@ -87,10 +117,13 @@ void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutio
 	EvaluateParameters.SourceTags = SourceTags;
 	EvaluateParameters.TargetTags = TargetTags;
 
+	// Debuff
+	const FAuraGameplayTags& Tags = FAuraGameplayTags::Get();
+
+	DetermineDebuff(Spec, Tags);
+
 	// 데미지 정보 불러오기 — 속성 저항 적용
 	float Damage = 0.f;
-
-	const FAuraGameplayTags& Tags = FAuraGameplayTags::Get();
 
 	TMap<FGameplayTag, FGameplayEffectAttributeCaptureDefinition> ResTagToCaptureDef;
 	ResTagToCaptureDef.Add(Tags.Attribute_Secondary_ResFire, DamageStatics().ResFireDef);
