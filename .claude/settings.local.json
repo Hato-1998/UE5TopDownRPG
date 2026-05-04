@@ -3,7 +3,17 @@
     "allow": [
       "mcp__unreal_editor__get_level_actors",
       "mcp__unreal_editor__execute_python",
-      "Bash(xargs ls:*)"
+      "Bash(xargs ls:*)",
+      "mcp__unreal_editor__check_editor_connection",
+      "Bash(git -C E:/Git_Project/UE5TopDownRPG diff -- Source/Aura/Public/Player/AuraPlayerState.h Source/Aura/Private/Player/AuraPlayerState.cpp Source/Aura/Public/Character/AuraCharacter.h Source/Aura/Private/Character/AuraCharacter.cpp Source/Aura/Public/UI/Widget/AttributeWidgetMenuController.h Source/Aura/Private/UI/Widget/AttributeWidgetMenuController.cpp)",
+      "mcp__unreal_inspector__quicksearch",
+      "mcp__unreal_editor__find_assets",
+      "mcp__unreal_editor__run_python_file",
+      "mcp__unreal_inspector__get_asset_meta",
+      "mcp__unreal_editor__get_asset_info",
+      "Bash(awk '/NODE_DUMP_START/,/NODE_DUMP_END/' \"E:/Git_Project/UE5TopDownRPG/Saved/Logs/Aura.log\")",
+      "Bash(awk '/PIN_DUMP_START/,/PIN_DUMP_END/' \"E:/Git_Project/UE5TopDownRPG/Saved/Logs/Aura.log\")",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"E:\\\\Git_Project\\\\UE5TopDownRPG\\\\Content\\\\Blueprints\\\\AbilitySystem\\\\Aura\\\\Abilities\\\\Fire\\\\FireBolt\\\\GA_FireBolt.uasset\"\\); $text = [System.Text.Encoding]::ASCII.GetString\\($bytes\\); \\($text -split '[\\\\x00-\\\\x1f]+' | Where-Object { $_ -match 'FireBol|Event\\\\.Montage|MakeLiteral|WaitGameplayEvent|EventTag' } | Sort-Object -Unique\\) -join \"`n\")"
     ]
   }
 }
