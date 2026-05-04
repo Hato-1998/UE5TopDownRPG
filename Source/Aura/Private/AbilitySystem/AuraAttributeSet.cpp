@@ -181,6 +181,12 @@ void UAuraAttributeSet::HandleIncomingDamage(const FEffectProperties& Props)
 				Props.TargetASC->TryActivateAbilitiesByTag(FGameplayTagContainer(Tags));
 			}
 
+			const FVector KnockbackForce = UAuraAbilitySystemLibrary::GetKnockbackForce(Props.EffectContext);
+			if (!KnockbackForce.IsNearlyZero(1.f) && Props.TargetCharacter)
+			{
+				Props.TargetCharacter->LaunchCharacter(KnockbackForce, true, true);
+			}
+
 			if (UAuraAbilitySystemLibrary::IsSuccessfulDebuff(Props.EffectContext))
 			{
 				Debuff(Props);

@@ -36,6 +36,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Damage")
 	float DeathImpulseMagnitude = 100.f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Knockback")
+	float KnockbackChance = 0.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Knockback")
+	float KnockbackForceMagnitude = 1000.f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Debuff")
 	float DebuffChance = 20.f;
 

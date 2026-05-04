@@ -50,6 +50,15 @@ struct FDamageEffectParams
 
 	UPROPERTY()
 	FVector DeathImpulse = FVector::ZeroVector;
+
+	UPROPERTY()
+	float KnockbackChance = 0.f;
+
+	UPROPERTY()
+	float KnockbackForceMagnitude = 0.f;
+
+	UPROPERTY()
+	FVector KnockbackForce = FVector::ZeroVector;
 };
 
 USTRUCT(BlueprintType)
@@ -74,6 +83,8 @@ public:
 	float GetDeathImpulseMagnitude() const { return DeathImpulseMagnitude; }
 	FVector GetDeathImpulse() const { return DeathImpulse; }
 
+	FVector GetKnockbackForce() const { return KnockbackForce; }
+
 	void SetIsSuccessfulDebuff(bool bInIsSuccessfulDebuff) { bIsSuccessfulDebuff = bInIsSuccessfulDebuff; }
 	void SetIsDebuffDamage(bool bInIsDebuffDamage) { bIsDebuffDamage = bInIsDebuffDamage; }
 	void SetDebuffDamage(float InDamage) { DebuffDamage = InDamage; }
@@ -82,6 +93,8 @@ public:
 	void SetDamageType(const TSharedPtr<FGameplayTag>& InDamageType) { DamageType = InDamageType; }
 	void SetDeathImpulseMagnitude(float InMagnitude) { DeathImpulseMagnitude = InMagnitude; }
 	void SetDeathImpulse(const FVector& InImpulse) { DeathImpulse = InImpulse; }
+
+	void SetKnockbackForce(const FVector& InForce) { KnockbackForce = InForce; }
 
 	/** Returns the actual struct used for serialization, subclasses must override this! */
 	virtual UScriptStruct* GetScriptStruct() const override
@@ -135,6 +148,9 @@ protected:
 
 	UPROPERTY()
 	FVector DeathImpulse = FVector::ZeroVector;
+
+	UPROPERTY()
+	FVector KnockbackForce = FVector::ZeroVector;
 };
 
 template<>

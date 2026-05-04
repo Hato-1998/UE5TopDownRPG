@@ -10,13 +10,7 @@
 
 void UAuraDamageGameplayAbility::CauseDamage(AActor* TargetActor)
 {
-	FGameplayEffectSpecHandle DamageSpecHandle = MakeOutgoingGameplayEffectSpec(DamageEffectClass, 1.);
-
-	const float DamageMagnitude = Damage.GetValueAtLevel(GetAbilityLevel());
-	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(DamageSpecHandle, DamageType, DamageMagnitude);
-
-	GetAbilitySystemComponentFromActorInfo()->ApplyGameplayEffectSpecToTarget(*DamageSpecHandle.Data.Get(), UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor));
-
+	UAuraAbilitySystemLibrary::ApplyGameplayEffect(MakeDamageEffectParamsFromClassDefaults(TargetActor));
 }
 
 FDamageEffectParams UAuraDamageGameplayAbility::MakeDamageEffectParamsFromClassDefaults(AActor* TargetActor) const
@@ -34,10 +28,26 @@ FDamageEffectParams UAuraDamageGameplayAbility::MakeDamageEffectParamsFromClassD
 	Params.DebuffDuration = DebuffDuration;
 	Params.DebuffFrequency = DebuffFrequency;
 	Params.DeathImpulseMagnitude = DeathImpulseMagnitude;
+	Params.KnockbackChance = KnockbackChance;
+	Params.KnockbackForceMagnitude = KnockbackForceMagnitude;
 
-	if (AActor* AvatarActor = GetAvatarActorFromActorInfo())
+	AActor* SourceAvatarActor = GetAvatarActorFromActorInfo();
+	if (SourceAvatarActor && TargetActor)
 	{
-		Params.DeathImpulse = AvatarActor->GetActorForwardVector() * DeathImpulseMagnitude;
+		const FVector ToTarget = TargetActor->GetActorLocation() - SourceAvatarActor->GetActorLocation();
+		const FVector DirectionToTarget = ToTarget.GetSafeNormal2D();
+
+		if (!DirectionToTarget.IsNearlyZero())
+		{
+			Params.DeathImpulse = DirectionToTarget * DeathImpulseMagnitude;
+
+			if (const bool bKnockback = FMath::FRandRange(1.f, 100.f) < KnockbackChance)
+			{
+				FRotator KnockbackRotation = DirectionToTarget.Rotation();
+				KnockbackRotation.Pitch = 45.f;
+				Params.KnockbackForce = KnockbackRotation.Vector() * KnockbackForceMagnitude;
+			}
+		}
 	}
 
 	return Params;
