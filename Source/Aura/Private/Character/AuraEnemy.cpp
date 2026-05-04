@@ -77,14 +77,14 @@ int32 AAuraEnemy::GetXPReward_Implementation() const
 	return XPReward.GetValueAtLevel(Level);
 }
 
-void AAuraEnemy::Die()
+void AAuraEnemy::Die(const FVector& DeathImpulse)
 {
 	HealthBar->SetVisibility(false);
 	SetLifeSpan(LifeSpan);
 
 	if (AuraAIController) AuraAIController->GetBlackboardComponent()->SetValueAsBool(AuraBBKeys::Dead, true);
 
-	Super::Die();
+	Super::Die(DeathImpulse);
 }
 
 void AAuraEnemy::BeginPlay()
@@ -131,6 +131,8 @@ void AAuraEnemy::InitAbilityActorInfo()
 
 	AbilitySystemComponent->RegisterGameplayTagEvent(FAuraGameplayTags::Get().Effects_HitReact, EGameplayTagEventType::NewOrRemoved).AddUObject(
 		this, &AAuraEnemy::HitReactTagChanged);
+
+	OnAscRegistered.Broadcast(AbilitySystemComponent);
 
 	// 초기값 브로드캐스트
 	OnHealthChanged.Broadcast(AuraAS->GetHealth());

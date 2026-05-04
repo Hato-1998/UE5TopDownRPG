@@ -8,6 +8,7 @@
 #include "Interaction/CombatInterface.h"
 #include "AuraCharacterBase.generated.h"
 
+class UAuraDebuffNiagaraComponent;
 class UAbilitySystemComponent;
 class UAttributeSet;
 class UGameplayEffect;
@@ -29,10 +30,18 @@ public:
 	UAttributeSet* GetAttributeSet() const { return AttributeSet; }
 
 	UFUNCTION(NetMulticast, Reliable)
-	virtual void MulticastHandleDeath();
+	virtual void MulticastHandleDeath(const FVector& DeathImpulse);
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	TArray<FTaggedMontage> AttackMontages;
+
+	virtual FOnASCRegistered& GetOnASCRegisteredDelegate() override { return OnAscRegistered; }
+	virtual FOnDeathSignature& GetOnDeathDelegate() override { return OnDeathDelegate; }
+
+	FOnASCRegistered OnAscRegistered;
+
+	UPROPERTY(BlueprintAssignable, Category = "GAS|Combat")
+	FOnDeathSignature OnDeathDelegate;
 protected:
 	virtual void BeginPlay() override;
 	virtual void InitAbilityActorInfo();
@@ -47,7 +56,7 @@ protected:
 	virtual AActor* GetCombatTarget_Implementation() const override;
 	virtual void SetCombatTarget_Implementation(AActor* InCombatTarget) override;
 
-	virtual void Die() override;
+	virtual void Die(const FVector& DeathImpulse) override;
 
 	virtual UAnimMontage* GetHitReactMontage_Implementation() override;
 
@@ -106,6 +115,9 @@ protected:
 	bool bDead = false;
 
 	int32 SummonCount = 0;
+
+	UPROPERTY(VisibleInstanceOnly)
+	TObjectPtr<UAuraDebuffNiagaraComponent> BurnDebuffComponent;
 private:
 
 	UPROPERTY(EditAnywhere, Category = "Abilities")

@@ -157,31 +157,34 @@ void UAuraAttributeSet::HandleIncomingDamage(const FEffectProperties& Props)
 
 		const bool bFatal = NewHealth <= 0.f;
 
+		const bool bBlockedHit = UAuraAbilitySystemLibrary::IsBlockedHit(Props.EffectContext);
+		const bool bCriticalHit = UAuraAbilitySystemLibrary::IsCriticalHit(Props.EffectContext);
+		ShowFloatingText(Props, LocalIncomingDamage, bBlockedHit, bCriticalHit);
+
 		if (bFatal)
 		{
 			if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(Props.TargetAvatarActor))
 			{
-				CombatInterface->Die();
+				const FVector DeathImpulse = UAuraAbilitySystemLibrary::GetDeathImpulse(Props.EffectContext);
+				CombatInterface->Die(DeathImpulse);
 			}
 			SendXPEvent(Props);
 		}
 		else
 		{
-			if (Props.TargetASC)
+			const bool bIsDebuffDamage = UAuraAbilitySystemLibrary::IsDebuffDamage(Props.EffectContext);
+
+			if (Props.TargetASC && !bIsDebuffDamage)
 			{
 				FGameplayTagContainer Tags;
 				Tags.AddTag(FAuraGameplayTags::Get().Effects_HitReact);
 				Props.TargetASC->TryActivateAbilitiesByTag(FGameplayTagContainer(Tags));
 			}
-		}
 
-		const bool bBlockedHit = UAuraAbilitySystemLibrary::IsBlockedHit(Props.EffectContext);
-		const bool bCriticalHit = UAuraAbilitySystemLibrary::IsCriticalHit(Props.EffectContext);
-		ShowFloatingText(Props, LocalIncomingDamage, bBlockedHit, bCriticalHit);
-
-		if (UAuraAbilitySystemLibrary::IsSuccessfulDebuff(Props.EffectContext))
-		{
-			Debuff(Props);
+			if (UAuraAbilitySystemLibrary::IsSuccessfulDebuff(Props.EffectContext))
+			{
+				Debuff(Props);
+			}
 		}
 	}
 }
@@ -226,6 +229,7 @@ void UAuraAttributeSet::Debuff(const FEffectProperties& Props)
 	const FAuraGameplayTags& Tags = FAuraGameplayTags::Get();
 	FGameplayEffectContextHandle EffectContext = Props.SourceASC->MakeEffectContext();
 	EffectContext.AddSourceObject(Props.SourceAvatarActor);
+	UAuraAbilitySystemLibrary::SetIsDebuffDamage(EffectContext, true);
 
 	const FGameplayTag DamageType = UAuraAbilitySystemLibrary::GetDamageType(Props.EffectContext);
 	const float DebuffDamage = UAuraAbilitySystemLibrary::GetDebuffDamage(Props.EffectContext);

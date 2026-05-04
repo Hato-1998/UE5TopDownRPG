@@ -122,6 +122,9 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	* Debuff Types
 	*/
 
+	GameplayTags.Debuff = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Debuff"), FString("Debuff Type"));
+
 	GameplayTags.Debuff_Burn = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("Debuff.Burn"), FString("Burn Debuff Type"));
 

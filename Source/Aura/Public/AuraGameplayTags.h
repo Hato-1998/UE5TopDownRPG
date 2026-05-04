@@ -59,6 +59,7 @@ public:
 	FGameplayTag Damage_Arcane;
 	FGameplayTag Damage_Physical;
 
+	FGameplayTag Debuff;
 	FGameplayTag Debuff_Burn;
 	FGameplayTag Debuff_Stun;
 	FGameplayTag Debuff_Arcane;

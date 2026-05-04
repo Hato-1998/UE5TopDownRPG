@@ -33,6 +33,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Damage")
 	FScalableFloat Damage;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Damage")
+	float DeathImpulseMagnitude = 100.f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Debuff")
 	float DebuffChance = 20.f;
 

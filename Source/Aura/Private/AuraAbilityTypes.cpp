@@ -2,7 +2,7 @@
 
 bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
 {
-	uint16 RepBits = 0;
+	uint32 RepBits = 0;
 	if (Ar.IsSaving())
 	{
 		if (bReplicateInstigator && Instigator.IsValid())
@@ -61,9 +61,17 @@ bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* M
 		{
 			RepBits |= 1 << 13;
 		}
+		if (bIsDebuffDamage)
+		{
+			RepBits |= 1 << 14;
+		}
+		if (DeathImpulse.IsZero())
+		{
+			RepBits |= 1 << 15;
+		}
 	}
 
-	Ar.SerializeBits(&RepBits, 14);
+	Ar.SerializeBits(&RepBits, 16);
 
 	if (RepBits & (1 << 0))
 	{
@@ -128,6 +136,10 @@ bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* M
 		}
 		DamageType->NetSerialize(Ar, Map, bOutSuccess);
 	}
+	if (RepBits & (1 << 15))
+	{
+		DeathImpulse.NetSerialize(Ar, Map, bOutSuccess);
+	}
 
 	if (Ar.IsLoading())
 	{
@@ -136,6 +148,7 @@ bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* M
 		bIsBlockedHit = (RepBits & (1 << 7)) != 0;
 		bIsCriticalHit = (RepBits & (1 << 8)) != 0;
 		bIsSuccessfulDebuff = (RepBits & (1 << 9)) != 0;
+		bIsDebuffDamage = (RepBits & (1 << 14)) != 0;
 	}
 
 	bOutSuccess = true;

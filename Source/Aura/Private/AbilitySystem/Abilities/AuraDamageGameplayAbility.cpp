@@ -33,6 +33,12 @@ FDamageEffectParams UAuraDamageGameplayAbility::MakeDamageEffectParamsFromClassD
 	Params.DebuffDamage = DebuffDamage;
 	Params.DebuffDuration = DebuffDuration;
 	Params.DebuffFrequency = DebuffFrequency;
+	Params.DeathImpulseMagnitude = DeathImpulseMagnitude;
+
+	if (AActor* AvatarActor = GetAvatarActorFromActorInfo())
+	{
+		Params.DeathImpulse = AvatarActor->GetActorForwardVector() * DeathImpulseMagnitude;
+	}
 
 	return Params;
 }
