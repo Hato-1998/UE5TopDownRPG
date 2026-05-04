@@ -182,9 +182,12 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 			}
 			else
 			{
-				FGameplayTagContainer Tags;
-				Tags.AddTag(FAuraGameplayTags::Get().Effects_HitReact);
-				Props.TargetASC->TryActivateAbilitiesByTag(FGameplayTagContainer(Tags));
+				if (Props.TargetASC)
+				{
+					FGameplayTagContainer Tags;
+					Tags.AddTag(FAuraGameplayTags::Get().Effects_HitReact);
+					Props.TargetASC->TryActivateAbilitiesByTag(FGameplayTagContainer(Tags));
+				}
 			}
 
 			const bool bBlockedHit = UAuraAbilitySystemLibrary::IsBlockedHit(Props.EffectContext);
@@ -198,7 +201,7 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 		const int32 LocalIncomingXP = GetIncomingXp();
 		SetIncomingXp(0.f);
 
-		if (Props.SourceCharacter->Implements<UPlayerInterface>() && Props.SourceCharacter->Implements<UCombatInterface>())
+		if (Props.SourceCharacter && Props.SourceCharacter->Implements<UPlayerInterface>() && Props.SourceCharacter->Implements<UCombatInterface>())
 		{
 			const int32 CurrentLevel = ICombatInterface::Execute_GetPlayerLevel(Props.SourceCharacter);
 			const int32 CurrentXP = IPlayerInterface::Execute_GetXP(Props.SourceCharacter);
@@ -218,10 +221,10 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 					IPlayerInterface::Execute_AddToSpellPoints(Props.SourceCharacter, SpellPointsReward);
 				}
 
-				SetHealth(GetMaxHealth());
-				SetMana(GetMaxMana());
-
 				IPlayerInterface::Execute_LevelUp(Props.SourceCharacter);
+
+				bTopOffHealth = true;
+				bTopOffMana = true;
 			}
 
 			IPlayerInterface::Execute_AddToXP(Props.SourceCharacter, LocalIncomingXP);
@@ -229,8 +232,29 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 	}
 }
 
+void UAuraAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue)
+{
+	Super::PostAttributeChange(Attribute, OldValue, NewValue);
+
+	if ( Attribute == GetMaxHealthAttribute() && bTopOffHealth)
+	{
+		SetHealth(GetMaxHealth());
+		bTopOffHealth = false;
+	}
+	if ( Attribute == GetMaxManaAttribute() && bTopOffMana)
+	{
+		SetMana(GetMaxMana());
+		bTopOffMana = false;
+	}
+}
+
 void UAuraAttributeSet::ShowFloatingText(const FEffectProperties& Props, float Damage, bool bBlockedHit, bool bCriticalHit) const
 {
+	if (!Props.SourceCharacter || !Props.TargetCharacter)
+	{
+		return;
+	}
+
 	if (Props.SourceCharacter != Props.TargetCharacter)
 	{
 		if (AAuraPlayerController* PC = Cast<AAuraPlayerController>(Props.SourceCharacter->Controller))
@@ -249,7 +273,7 @@ void UAuraAttributeSet::SendXPEvent(const FEffectProperties& Props) const
 {
 	ICombatInterface* CombatInterface = Cast<ICombatInterface>(Props.TargetAvatarActor);
 
-	if (CombatInterface)
+	if (CombatInterface && Props.SourceCharacter)
 	{
 		const FAuraGameplayTags GameplayTags = FAuraGameplayTags::Get();
 		FGameplayEventData Payload;

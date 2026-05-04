@@ -7,6 +7,8 @@
 #include "AuraAbilityTypes.h"
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "Engine/OverlapResult.h"
+#include "Engine/Engine.h"
+#include "Engine/World.h"
 #include "Game/AuraGameModeBase.h"
 #include "Interaction/CombatInterface.h"
 #include "Kismet/GameplayStatics.h"
@@ -25,8 +27,11 @@ bool UAuraAbilitySystemLibrary::MakeWidgetControllerParams(const UObject* WorldC
 	if (!OutHUD) return false;
 
 	AAuraPlayerState* AuraPlayerState = PlayerController->GetPlayerState<AAuraPlayerState>();
+	if (!AuraPlayerState) return false;
+
 	UAbilitySystemComponent* ASC = AuraPlayerState->GetAbilitySystemComponent();
 	UAttributeSet* AS = AuraPlayerState->GetAttributeSet();
+	if (!ASC || !AS) return false;
 
 	OutParams = FWidgetControllerParams(PlayerController, AuraPlayerState, ASC, AS);
 	return true;
@@ -54,8 +59,21 @@ UAttributeWidgetMenuController* UAuraAbilitySystemLibrary::GetAttributeWidgetMen
 	return nullptr;
 }
 
+USpellMenuWidgetController* UAuraAbilitySystemLibrary::GetSpellWidgetMenuController(const UObject* WorldContextObject)
+{
+	FWidgetControllerParams Params;
+	AAuraHUD* AuraHUD;
+	if (MakeWidgetControllerParams(WorldContextObject, Params, AuraHUD))
+	{
+		return AuraHUD->GetSpellWidgetMenuController(Params);
+	}
+	return nullptr;
+}
+
 void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* WorldContextObject, ECharacterClass CharacterClass, float Level, UAbilitySystemComponent* ASC)
 {
+	if (!ASC) return;
+
 	AActor* AvatarActor = ASC->GetAvatarActor();
 
 	UCharacterClassInfo* CharacterClassInfo = GetCharacterClassInfo(WorldContextObject);
@@ -66,26 +84,32 @@ void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* World
 	FGameplayEffectContextHandle PrimaryAttributeContext = ASC->MakeEffectContext();
 	PrimaryAttributeContext.AddSourceObject(AvatarActor);
 	const FGameplayEffectSpecHandle PrimarySpecHandle = ASC->MakeOutgoingSpec(ClassDefaultInfo.PrimaryAttributes, Level, PrimaryAttributeContext);
+	if (!PrimarySpecHandle.IsValid()) return;
 	ASC->ApplyGameplayEffectSpecToSelf(*PrimarySpecHandle.Data.Get());
 
 	FGameplayEffectContextHandle SecondaryAttributeContext = ASC->MakeEffectContext();
 	SecondaryAttributeContext.AddSourceObject(AvatarActor);
 	const FGameplayEffectSpecHandle SecondarySpecHandle = ASC->MakeOutgoingSpec(CharacterClassInfo->SecondaryAttributes, Level, SecondaryAttributeContext);
+	if (!SecondarySpecHandle.IsValid()) return;
 	ASC->ApplyGameplayEffectSpecToSelf(*SecondarySpecHandle.Data.Get());
 
 	FGameplayEffectContextHandle VitalAttributeContext = ASC->MakeEffectContext();
 	VitalAttributeContext.AddSourceObject(AvatarActor);
 	const FGameplayEffectSpecHandle VitalSpecHandle = ASC->MakeOutgoingSpec(CharacterClassInfo->VitalAttributes, Level,VitalAttributeContext);
+	if (!VitalSpecHandle.IsValid()) return;
 	ASC->ApplyGameplayEffectSpecToSelf(*VitalSpecHandle.Data.Get());
 }
 
 void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContextObject, UAbilitySystemComponent* ASC, ECharacterClass CharacterClass)
 {
+	if (!ASC) return;
+
 	UCharacterClassInfo* CharacterClassInfo = GetCharacterClassInfo(WorldContextObject);
 	if (!CharacterClassInfo) return;
 
 	for (TSubclassOf<UGameplayAbility> AbilityClass : CharacterClassInfo->CommonAbilities)
 	{
+		if (!AbilityClass) continue;
 		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(AbilityClass, 1);
 		ASC->GiveAbility(AbilitySpec);
 	}
@@ -93,6 +117,8 @@ void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContext
 	const FCharacterClassDefaultInfo& DefaultInfo = CharacterClassInfo->GetClassDefaultInfo(CharacterClass);
 	for (auto AbilityClass : DefaultInfo.StartupAbilities)
 	{
+		if (!AbilityClass) continue;
+
 		AActor* AvatarActor = ASC->GetAvatarActor();
 		if (AvatarActor && AvatarActor->Implements<UCombatInterface>())
 		{
@@ -105,10 +131,18 @@ void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContext
 
 UCharacterClassInfo* UAuraAbilitySystemLibrary::GetCharacterClassInfo(const UObject* WorldContextObject)
 {
-	AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
+	const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
 	if (AuraGameMode == nullptr) return nullptr;
 
 	return AuraGameMode->CharacterClassInfo;
+}
+
+UAbilityInfo* UAuraAbilitySystemLibrary::GetAbilityInfo(const UObject* WorldContextObject)
+{
+	const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
+	if (AuraGameMode == nullptr) return nullptr;
+
+	return AuraGameMode->AbilityInfo;
 }
 
 bool UAuraAbilitySystemLibrary::IsBlockedHit(const FGameplayEffectContextHandle& EffectContextHandle)
@@ -165,9 +199,10 @@ void UAuraAbilitySystemLibrary::GetLivePlayerWithInRadius(const UObject* WorldCo
 
 		for (const FOverlapResult& Overlap : Overlaps)
 		{
-			if (Overlap.GetActor()->Implements<UCombatInterface>() && ICombatInterface::Execute_IsDead(Overlap.GetActor()) == false)
+			AActor* OverlapActor = Overlap.GetActor();
+			if (OverlapActor && OverlapActor->Implements<UCombatInterface>() && ICombatInterface::Execute_IsDead(OverlapActor) == false)
 			{
-				OutOverlappingActors.AddUnique(ICombatInterface::Execute_GetAvatar(Overlap.GetActor()));
+				OutOverlappingActors.AddUnique(ICombatInterface::Execute_GetAvatar(OverlapActor));
 			}
 		}
 	}
@@ -177,6 +212,11 @@ void UAuraAbilitySystemLibrary::GetLivePlayerWithInRadius(const UObject* WorldCo
 
 bool UAuraAbilitySystemLibrary::IsNotFriend(AActor* FirstActor, AActor* SecondActor)
 {
+	if (!FirstActor || !SecondActor)
+	{
+		return false;
+	}
+
 	// 1. 둘 다 'Player' 태그를 가지고 있는지 확인
 	const bool bBothArePlayers = FirstActor->ActorHasTag(FName("Player")) && SecondActor->ActorHasTag(FName("Player"));
 

@@ -50,6 +50,8 @@ public:
 	FGameplayTag InputTag_Action3;
 	FGameplayTag InputTag_Action4;
 	FGameplayTag InputTag_Shift;
+	FGameplayTag InputTag_Passive1;
+	FGameplayTag InputTag_Passive2;
 
 	FGameplayTag Damage;
 	FGameplayTag Damage_Fire;
@@ -57,10 +59,25 @@ public:
 	FGameplayTag Damage_Arcane;
 	FGameplayTag Damage_Physical;
 
+	FGameplayTag Abilities_None;
 	FGameplayTag Abilities_Attack;
 	FGameplayTag Abilities_Summon;
+	FGameplayTag Abilities_HitReact;
+
+	FGameplayTag Effects_HitReact;
+
+	FGameplayTag Abilities_Status_Locked;
+	FGameplayTag Abilities_Status_Eligible;
+	FGameplayTag Abilities_Status_Unlocked;
+	FGameplayTag Abilities_Status_Equipped;
+
+	FGameplayTag Abilities_Type_Offensive;
+	FGameplayTag Abilities_Type_Passive;
+	FGameplayTag Abilities_Type_None;
 
 	FGameplayTag Abilities_Fire_FireBolt;
+	FGameplayTag Abilities_Lightning_Electrocute;
+
 	FGameplayTag Cooldown_Fire_FireBolt;
 
 	/*
@@ -85,8 +102,6 @@ public:
 	FGameplayTag Abilities;
 	FGameplayTag Input;
 	FGameplayTag Message;
-
-	FGameplayTag Effects_HitReact;
 
 	TMap<FGameplayTag, FGameplayTag> DamageTypesToResistances;
 

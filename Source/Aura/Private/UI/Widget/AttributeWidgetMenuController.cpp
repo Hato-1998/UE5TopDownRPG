@@ -2,35 +2,52 @@
 
 
 #include "UI/Widget/AttributeWidgetMenuController.h"
+
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/Data/AttributeInfo.h"
 #include "AbilitySystem/AuraAttributeSet.h"
+#include "Player/AuraPlayerState.h"
 
 void UAttributeWidgetMenuController::BroadcastInitialValues()
 {
-	UAuraAttributeSet* AS = Cast<UAuraAttributeSet>(AttributeSet);
-
 	check(AttributeMetaData);
 
-	for (auto& Pair : AS->TagsToAttributes)
+	for (auto& Pair : GetAuraAS()->TagsToAttributes)
 	{
-		BroadcastAttributeMetaData(AS, Pair.Key, Pair.Value);
+		BroadcastAttributeMetaData(GetAuraAS(), Pair.Key, Pair.Value);
+	}
+
+	if (GetAuraPS())
+	{
+		OnAttributePointsChangedDelegate.Broadcast(GetAuraPS()->GetAttributePoints());
 	}
 }
 
 void UAttributeWidgetMenuController::BindCallbacksToDependencies()
 {
-	UAuraAttributeSet* AS = Cast<UAuraAttributeSet>(AttributeSet);
-	check(AS);
-
-	for (auto& Pair : AS->TagsToAttributes)
+	for (auto& Pair :  GetAuraAS()->TagsToAttributes)
 	{
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(Pair.Value).AddLambda(
-			[this, AS, Tag = Pair.Key, Attribute = Pair.Value](const FOnAttributeChangeData&)
+			[this, Tag = Pair.Key, Attribute = Pair.Value](const FOnAttributeChangeData&)
 			{
-				BroadcastAttributeMetaData(AS, Tag, Attribute);
+				BroadcastAttributeMetaData( GetAuraAS(), Tag, Attribute);
 			}
 		);
 	}
+
+	if (GetAuraPS())
+	{
+		GetAuraPS()->OnAttributePointsChangedDelegate.AddLambda(
+			[this](int32 NewAttributePoints)
+			{
+				OnAttributePointsChangedDelegate.Broadcast(NewAttributePoints);
+			});
+	}
+}
+
+void UAttributeWidgetMenuController::UpgradeAttributePoints(const FGameplayTag& AttributeTag)
+{
+	GetAuraASC()->UpgradeAttributePoints(AttributeTag);
 }
 
 void UAttributeWidgetMenuController::BroadcastAttributeMetaData(

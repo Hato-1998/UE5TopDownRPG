@@ -8,6 +8,7 @@
 
 class UGameplayEffect;
 class UGameplayAbility;
+class UCurveTable;
 
 UENUM(BlueprintType)
 enum class ECharacterClass : uint8
