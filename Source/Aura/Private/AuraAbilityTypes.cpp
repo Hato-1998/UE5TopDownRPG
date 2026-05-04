@@ -1,5 +1,7 @@
 #include "AuraAbilityTypes.h"
 
+#include "Engine/HitResult.h"
+
 bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
 {
 	uint32 RepBits = 0;
@@ -65,7 +67,7 @@ bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* M
 		{
 			RepBits |= 1 << 14;
 		}
-		if (DeathImpulse.IsZero())
+		if (!DeathImpulse.IsZero())
 		{
 			RepBits |= 1 << 15;
 		}

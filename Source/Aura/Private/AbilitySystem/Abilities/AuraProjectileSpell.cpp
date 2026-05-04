@@ -6,6 +6,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "AuraGameplayTags.h"
+#include "Aura/AuraLogChannels.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 #include "Actor/AuraProjectile.h"
@@ -21,14 +22,39 @@ void UAuraProjectileSpell::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 
 void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocation, const FGameplayTag& SocketTag, bool bOverridePitch, float OverridePitch)
 {
-	const bool bIsServer = GetAvatarActorFromActorInfo()->HasAuthority();
+	AActor* AvatarActor = GetAvatarActorFromActorInfo();
+	if (!AvatarActor)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: Cannot spawn projectile because AvatarActor is null."), __FUNCTION__);
+		return;
+	}
+
+	const bool bIsServer = AvatarActor->HasAuthority();
 	if (!bIsServer) return;
 
-	const ICombatInterface* CombatInterface = Cast<ICombatInterface>(GetAvatarActorFromActorInfo());
-	if (!CombatInterface) return;
+	if (!ProjectileClass)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: ProjectileClass is not set on %s."), __FUNCTION__, *GetNameSafe(this));
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: Cannot spawn projectile because World is null."), __FUNCTION__);
+		return;
+	}
+
+	const ICombatInterface* CombatInterface = Cast<ICombatInterface>(AvatarActor);
+	if (!CombatInterface)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: AvatarActor %s does not implement CombatInterface."),
+			__FUNCTION__, *GetNameSafe(AvatarActor));
+		return;
+	}
 
 	const FVector SpawnLocation = ICombatInterface::Execute_GetCombatSocketLocation(
-		GetAvatarActorFromActorInfo(),
+		AvatarActor,
 		SocketTag);
 	FRotator Rotation = (ProjectileTargetLocation - SpawnLocation).Rotation();
 
@@ -41,12 +67,19 @@ void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocati
 	SpawnTransform.SetLocation(SpawnLocation);
 	SpawnTransform.SetRotation(Rotation.Quaternion());
 
-	AAuraProjectile* ProjectileActor = GetWorld()->SpawnActorDeferred<AAuraProjectile>(
+	AAuraProjectile* ProjectileActor = World->SpawnActorDeferred<AAuraProjectile>(
 		ProjectileClass,
 		SpawnTransform,
 		GetOwningActorFromActorInfo(),
-		Cast<APawn>(GetAvatarActorFromActorInfo()),
+		Cast<APawn>(AvatarActor),
 		ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+
+	if (!ProjectileActor)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: SpawnActorDeferred failed for ProjectileClass %s."),
+			__FUNCTION__, *GetNameSafe(ProjectileClass));
+		return;
+	}
 
 	ProjectileActor->DamageEffectParams = MakeDamageEffectParamsFromClassDefaults();
 

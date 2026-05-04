@@ -237,7 +237,7 @@ void UAuraAttributeSet::Debuff(const FEffectProperties& Props)
 	const float DebuffFrequency = UAuraAbilitySystemLibrary::GetDebuffFrequency(Props.EffectContext);
 
 	FString DebuffName = FString::Printf(TEXT("DynamicDebuff_%s"), *DamageType.ToString());
-	UGameplayEffect* Effect = NewObject<UGameplayEffect>(GetTransientPackage(), FName(DebuffName));
+	UGameplayEffect* Effect = NewObject<UGameplayEffect>(GetTransientPackageAsObject(), FName(DebuffName));
 
 	Effect->Period = DebuffFrequency;
 	Effect->DurationPolicy = EGameplayEffectDurationType::HasDuration;
@@ -279,6 +279,17 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 
 	FEffectProperties Props;
 	SetEffectProperties(Data, Props);
+
+	if (!Props.TargetAvatarActor || !Props.TargetASC)
+	{
+		UE_LOG(LogAura, Warning,
+			TEXT("%hs: Missing target effect properties. TargetAvatarActor=%s TargetASC=%s Attribute=%s"),
+			__FUNCTION__,
+			*GetNameSafe(Props.TargetAvatarActor),
+			*GetNameSafe(Props.TargetASC),
+			*Data.EvaluatedData.Attribute.GetName());
+		return;
+	}
 
 	if (Props.TargetAvatarActor->Implements<UCombatInterface>() && ICombatInterface::Execute_IsDead(Props.TargetAvatarActor)) return;
 

@@ -8,6 +8,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Aura/Aura.h"
+#include "Aura/AuraLogChannels.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/AudioComponent.h"
@@ -68,7 +69,26 @@ void AAuraProjectile::Destroyed()
 void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
                                       UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	if (!OtherActor)
+	{
+		return;
+	}
+
+	if (!DamageEffectParams.SourceAbilitySystemComponent)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: Projectile %s has no SourceAbilitySystemComponent. Overlap ignored."),
+			__FUNCTION__, *GetNameSafe(this));
+		return;
+	}
+
 	AActor* SourceAvatarActor = DamageEffectParams.SourceAbilitySystemComponent->GetAvatarActor();
+	if (!SourceAvatarActor)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: Projectile %s has no source avatar. Overlap ignored."),
+			__FUNCTION__, *GetNameSafe(this));
+		return;
+	}
+
 	if (SourceAvatarActor == OtherActor) return;
 	if (!UAuraAbilitySystemLibrary::IsNotFriend(SourceAvatarActor, OtherActor)) return;
 	if (!bHit) OnHit();
