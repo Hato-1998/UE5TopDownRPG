@@ -382,6 +382,48 @@ void UAuraAbilitySystemLibrary::GetLivePlayerWithInRadius(const UObject* WorldCo
 
 }
 
+void UAuraAbilitySystemLibrary::GetClosestTargets(int32 MaxTargets, const TArray<AActor*>& Actors,
+	TArray<AActor*>& OutClosestTargets, const FVector& Origin)
+{
+	if (Actors.Num() <= MaxTargets)
+	{
+		OutClosestTargets.Append(Actors);
+		return;
+	}
+
+	TArray<AActor*> ActorsToCheck = Actors;
+	int32 NumTargetsFound = 0;
+
+	while (NumTargetsFound < MaxTargets)
+	{
+		if (ActorsToCheck.Num() == 0) break;
+
+		double ClosestDistance = TNumericLimits<double>::Max();
+		AActor* ClosestActor = nullptr;
+		int32 ClosestIndex = INDEX_NONE;
+
+		for (int32 i = 0; i < ActorsToCheck.Num(); ++i)
+		{
+			AActor* CurrentActor = ActorsToCheck[i];
+			if (!CurrentActor) continue;
+
+			const double DistanceSq = FVector::DistSquared(CurrentActor->GetActorLocation(), Origin);
+			if (DistanceSq < ClosestDistance)
+			{
+				ClosestDistance = DistanceSq;
+				ClosestActor = CurrentActor;
+				ClosestIndex = i;
+			}
+		}
+
+		if (ClosestIndex == INDEX_NONE) break;
+
+		ActorsToCheck.RemoveAtSwap(ClosestIndex);
+		OutClosestTargets.Add(ClosestActor);
+		++NumTargetsFound;
+	}
+}
+
 bool UAuraAbilitySystemLibrary::IsNotFriend(AActor* FirstActor, AActor* SecondActor)
 {
 	if (!FirstActor || !SecondActor)

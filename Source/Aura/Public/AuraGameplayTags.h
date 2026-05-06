@@ -114,6 +114,16 @@ public:
 	FGameplayTag Input;
 	FGameplayTag Message;
 
+	/*
+	 * Player Tags
+	*/
+
+	FGameplayTag Player_Block_Input;
+	FGameplayTag Player_Block_InputPressed;
+	FGameplayTag Player_Block_InputReleased;
+	FGameplayTag Player_Block_InputHeld;
+	FGameplayTag Player_Block_CursorTrace;
+
 	TMap<FGameplayTag, FGameplayTag> DamageTypesToResistances;
 	TMap<FGameplayTag, FGameplayTag> DamageTypesToDebuffs;
 
