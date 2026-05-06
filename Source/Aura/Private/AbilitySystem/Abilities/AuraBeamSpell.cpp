@@ -12,12 +12,10 @@ void UAuraBeamSpell::StoreMouseDataInfo(const FHitResult& HitResult)
 {
 	if (HitResult.bBlockingHit)
 	{
+		AActor* HitActor = HitResult.GetActor();
+
 		MouseHitLocation = HitResult.ImpactPoint;
-		MouseHitActor = HitResult.GetActor();
-	}
-	else
-	{
-		CancelAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true);
+		MouseHitActor = HitActor;
 	}
 }
 
@@ -60,6 +58,14 @@ void UAuraBeamSpell::TraceFirstTarget(const FVector& BeamTargetLocation)
 			}
 		}
 	}
+
+	if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(MouseHitActor))
+	{
+		if (!CombatInterface->GetOnDeathDelegate().IsAlreadyBound(this, &UAuraBeamSpell::PrimaryTargetDied))
+		{
+			CombatInterface->GetOnDeathDelegate().AddDynamic(this, &UAuraBeamSpell::PrimaryTargetDied);
+		}
+	}
 }
 
 void UAuraBeamSpell::StoreAdditionalTargets(TArray<AActor*>& OutAdditionalTargets)
@@ -82,5 +88,35 @@ void UAuraBeamSpell::StoreAdditionalTargets(TArray<AActor*>& OutAdditionalTarget
 
 	UAuraAbilitySystemLibrary::GetClosestTargets(MaxNumShockTargets, OverlappingActors, OutAdditionalTargets, MouseHitActor->GetActorLocation());
 
+	for (AActor* Target : OutAdditionalTargets)
+	{
+		if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(Target))
+		{
+			if (!CombatInterface->GetOnDeathDelegate().IsAlreadyBound(this, &UAuraBeamSpell::AdditionalTargetDied))
+			{
+				CombatInterface->GetOnDeathDelegate().AddDynamic(this, &UAuraBeamSpell::AdditionalTargetDied);
+			}
+		}
+	}
 
+}
+
+void UAuraBeamSpell::UnbindDeathDelegates(AActor* PrimaryTarget, const TArray<AActor*>& AdditionalTargets)
+{
+	if (IsValid(PrimaryTarget))
+	{
+		if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(PrimaryTarget))
+		{
+			CombatInterface->GetOnDeathDelegate().RemoveDynamic(this, &UAuraBeamSpell::PrimaryTargetDied);
+		}
+	}
+
+	for (AActor* Target : AdditionalTargets)
+	{
+		if (!IsValid(Target)) continue;
+		if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(Target))
+		{
+			CombatInterface->GetOnDeathDelegate().RemoveDynamic(this, &UAuraBeamSpell::AdditionalTargetDied);
+		}
+	}
 }
