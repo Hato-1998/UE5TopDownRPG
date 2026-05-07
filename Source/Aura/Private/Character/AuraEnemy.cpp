@@ -35,6 +35,8 @@ AAuraEnemy::AAuraEnemy()
 
 	HealthBar = CreateDefaultSubobject<UWidgetComponent>("HealthBar");
 	HealthBar->SetupAttachment(GetRootComponent());
+
+	BaseWalkSpeed = 250.f;
 }
 
 void AAuraEnemy::PossessedBy(AController* NewController)
@@ -100,6 +102,10 @@ void AAuraEnemy::InitAbilityActorInfo()
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
 	Cast<UAuraAbilitySystemComponent>(AbilitySystemComponent)->AbilityActorInfoSet();
 
+	AbilitySystemComponent->RegisterGameplayTagEvent(
+	FAuraGameplayTags::Get().Debuff_Stun,
+	EGameplayTagEventType::NewOrRemoved).AddUObject(this, &AAuraEnemy::StunTagChanged);
+
 	if (HasAuthority())
 	{
 		InitializeDefaultAttributes();
@@ -143,7 +149,7 @@ void AAuraEnemy::HitReactTagChanged(const FGameplayTag CallbackTag, int32 NewCou
 {
 	bHitReacting = NewCount > 0;
 
-	GetCharacterMovement()->MaxWalkSpeed = bHitReacting ? 0.f :BaseWalkSpeed;
+	UpdateMovementSpeedFromDebuffs();
 
 	if (AuraAIController && AuraAIController->GetBlackboardComponent())
 	{
@@ -154,4 +160,30 @@ void AAuraEnemy::HitReactTagChanged(const FGameplayTag CallbackTag, int32 NewCou
 void AAuraEnemy::InitializeDefaultAttributes() const
 {
 	UAuraAbilitySystemLibrary::InitializeDefaultAttributes(this, CharacterClass, Level, AbilitySystemComponent);
+}
+
+void AAuraEnemy::StunTagChanged(const FGameplayTag CallBackTag, int32 NewCount)
+{
+	Super::StunTagChanged(CallBackTag, NewCount);
+
+	if (AuraAIController && AuraAIController->GetBlackboardComponent())
+	{
+		AuraAIController->GetBlackboardComponent()->SetValueAsBool(AuraBBKeys::Stunned, bIsStunned);
+	}
+}
+
+void AAuraEnemy::SetBeingShocked_Implementation(bool bBeingShocked)
+{
+	Super::SetBeingShocked_Implementation(bBeingShocked);
+
+	if (AuraAIController && AuraAIController->GetBlackboardComponent())
+	{
+		AuraAIController->GetBlackboardComponent()->SetValueAsBool(AuraBBKeys::BeingShocked, bBeingShocked);
+	}
+}
+
+void AAuraEnemy::UpdateMovementSpeedFromDebuffs()
+{
+	const bool bMovementLocked = bIsStunned || bIsBeingShocked || bHitReacting;
+	GetCharacterMovement()->MaxWalkSpeed = bMovementLocked ? 0.f : BaseWalkSpeed;
 }

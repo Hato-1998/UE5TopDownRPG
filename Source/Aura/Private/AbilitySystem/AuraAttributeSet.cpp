@@ -174,7 +174,10 @@ void UAuraAttributeSet::HandleIncomingDamage(const FEffectProperties& Props)
 		{
 			const bool bIsDebuffDamage = UAuraAbilitySystemLibrary::IsDebuffDamage(Props.EffectContext);
 
-			if (Props.TargetASC && !bIsDebuffDamage)
+			if (Props.TargetASC &&
+				!bIsDebuffDamage &&
+				Props.TargetCharacter->Implements<UCombatInterface>() &&
+				!ICombatInterface::Execute_IsBeingShocked(Props.TargetCharacter))
 			{
 				FGameplayTagContainer Tags;
 				Tags.AddTag(FAuraGameplayTags::Get().Effects_HitReact);
@@ -249,10 +252,19 @@ void UAuraAttributeSet::Debuff(const FEffectProperties& Props)
 	Effect->DurationPolicy = EGameplayEffectDurationType::HasDuration;
 	Effect->DurationMagnitude = FScalableFloat(DebuffDuration);
 
+	const FGameplayTag DebuffTag = Tags.DamageTypesToDebuffs[DamageType];
+
 	UTargetTagsGameplayEffectComponent& TargetTagsComponent =
 		Effect->FindOrAddComponent<UTargetTagsGameplayEffectComponent>();
 	FInheritedTagContainer GrantedTags;
-	GrantedTags.AddTag(Tags.DamageTypesToDebuffs[DamageType]);
+	GrantedTags.AddTag(DebuffTag);
+	if (DebuffTag.MatchesTagExact(Tags.Debuff_Stun))
+	{
+		GrantedTags.AddTag(Tags.Player_Block_CursorTrace);
+		GrantedTags.AddTag(Tags.Player_Block_InputHeld);
+		GrantedTags.AddTag(Tags.Player_Block_InputPressed);
+		GrantedTags.AddTag(Tags.Player_Block_InputReleased);
+	}
 	TargetTagsComponent.SetAndApplyTargetTagChanges(GrantedTags);
 
 	// SetStackingType is WITH_EDITOR-only; engine itself wraps direct field access in pragmas.

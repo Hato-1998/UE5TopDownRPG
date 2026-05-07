@@ -357,7 +357,7 @@ void UAuraAbilitySystemLibrary::SetKnockbackForce(FGameplayEffectContextHandle& 
 
 void UAuraAbilitySystemLibrary::GetLivePlayerWithInRadius(const UObject* WorldContextObject,
                                                           TArray<AActor*>& OutOverlappingActors, const TArray<AActor*>& ActorsToIgnore, float Radius,
-                                                          const FVector& SphereOrigin)
+                                                          const FVector& SphereOrigin, AActor* SourceAvatar)
 {
 	FCollisionQueryParams SphereParams;
 
@@ -374,7 +374,12 @@ void UAuraAbilitySystemLibrary::GetLivePlayerWithInRadius(const UObject* WorldCo
 			AActor* OverlapActor = Overlap.GetActor();
 			if (OverlapActor && OverlapActor->Implements<UCombatInterface>() && ICombatInterface::Execute_IsDead(OverlapActor) == false)
 			{
-				OutOverlappingActors.AddUnique(ICombatInterface::Execute_GetAvatar(OverlapActor));
+				AActor* Avatar = ICombatInterface::Execute_GetAvatar(OverlapActor);
+				if (SourceAvatar && !IsNotFriend(SourceAvatar, Avatar))
+				{
+					continue;
+				}
+				OutOverlappingActors.AddUnique(Avatar);
 			}
 		}
 	}

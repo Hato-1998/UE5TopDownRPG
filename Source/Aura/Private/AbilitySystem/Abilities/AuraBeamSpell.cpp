@@ -59,6 +59,12 @@ void UAuraBeamSpell::TraceFirstTarget(const FVector& BeamTargetLocation)
 		}
 	}
 
+	if (MouseHitActor && !UAuraAbilitySystemLibrary::IsNotFriend(OwnerCharacter, MouseHitActor))
+	{
+		MouseHitActor = nullptr;
+		MouseHitLocation = BeamTargetLocation;
+	}
+
 	if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(MouseHitActor))
 	{
 		if (!CombatInterface->GetOnDeathDelegate().IsAlreadyBound(this, &UAuraBeamSpell::PrimaryTargetDied))
@@ -81,12 +87,12 @@ void UAuraBeamSpell::StoreAdditionalTargets(TArray<AActor*>& OutAdditionalTarget
 		OverlappingActors,
 		ActorsToIgnore,
 		850.f,
-		MouseHitActor->GetActorLocation());
+		MouseHitActor->GetActorLocation(),
+		GetAvatarActorFromActorInfo());
 
-	//TODO 아직 사용하지 않음
 	int NumAdditionalTargets = FMath::Min(GetAbilityLevel() - 1, MaxNumShockTargets);
 
-	UAuraAbilitySystemLibrary::GetClosestTargets(MaxNumShockTargets, OverlappingActors, OutAdditionalTargets, MouseHitActor->GetActorLocation());
+	UAuraAbilitySystemLibrary::GetClosestTargets(NumAdditionalTargets, OverlappingActors, OutAdditionalTargets, MouseHitActor->GetActorLocation());
 
 	for (AActor* Target : OutAdditionalTargets)
 	{

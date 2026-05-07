@@ -114,7 +114,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "AuraAbilitySystemLibrary|GameplayMachanics")
 	static void GetLivePlayerWithInRadius(const UObject* WorldContextObject, TArray<AActor*>& OutOverlappingActors,
-		const TArray<AActor*>& ActorsToIgnore, float Radius, const FVector& SphereOrigin);
+		const TArray<AActor*>& ActorsToIgnore, float Radius, const FVector& SphereOrigin, AActor* SourceAvatar = nullptr);
 
 	UFUNCTION(BlueprintCallable, Category = "AuraAbilitySystemLibrary|GameplayMachanics")
 	static void GetClosestTargets(int32 MaxTargets, const TArray<AActor*>& Actors, TArray<AActor*>& OutClosestTargets, const FVector& Origin);
