@@ -213,7 +213,7 @@ FGameplayAbilitySpec* UAuraAbilitySystemComponent::GetSpecFromAbilityTag(const F
 		if (!AbilitySpec.Ability) continue;
 		for (FGameplayTag Tag : AbilitySpec.Ability.Get()->GetAssetTags())
 		{
-			if (Tag.MatchesTag(AbilityTag))
+			if (Tag.MatchesTagExact(AbilityTag))
 			{
 				return &AbilitySpec;
 			}

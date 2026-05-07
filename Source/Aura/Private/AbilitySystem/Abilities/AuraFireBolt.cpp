@@ -72,13 +72,28 @@ FString UAuraFireBolt::GetNextLevelDescription(int32 Level)
 
 void UAuraFireBolt::SpawnProjectiles(const FVector& TargetLocation, const FGameplayTag& SocketTag, bool bOverridePitch, float OverridePitch, AActor* HomingTarget)
 {
-
 	AActor* AvatarActor = GetAvatarActorFromActorInfo();
+	if (!AvatarActor)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: Cannot spawn projectiles because AvatarActor is null."), __FUNCTION__);
+		return;
+	}
 
 	const bool bIsServer = AvatarActor->HasAuthority();
 	if (!bIsServer) return;
 
+	if (!ProjectileClass)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: ProjectileClass is not set on %s."), __FUNCTION__, *GetNameSafe(this));
+		return;
+	}
+
 	UWorld* World = GetWorld();
+	if (!World)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: Cannot spawn projectiles because World is null."), __FUNCTION__);
+		return;
+	}
 
 	const ICombatInterface* CombatInterface = Cast<ICombatInterface>(AvatarActor);
 	if (!CombatInterface)
@@ -119,6 +134,14 @@ void UAuraFireBolt::SpawnProjectiles(const FVector& TargetLocation, const FGamep
 			return;
 		}
 
+		if (!ProjectileActor->ProjectileMovement)
+		{
+			UE_LOG(LogAura, Warning, TEXT("%hs: ProjectileMovement is null on spawned projectile %s."),
+				__FUNCTION__, *GetNameSafe(ProjectileActor));
+			ProjectileActor->Destroy();
+			return;
+		}
+
 		ProjectileActor->DamageEffectParams = MakeDamageEffectParamsFromClassDefaults();
 
 		if (HomingTarget && HomingTarget->Implements<UCombatInterface>())
@@ -127,9 +150,11 @@ void UAuraFireBolt::SpawnProjectiles(const FVector& TargetLocation, const FGamep
 		}
 		else
 		{
-			ProjectileActor->HomingTargetSceneComponent =NewObject<USceneComponent>(USceneComponent::StaticClass());
-			ProjectileActor->HomingTargetSceneComponent->SetWorldLocation(TargetLocation);
-			ProjectileActor->ProjectileMovement->HomingTargetComponent = ProjectileActor->HomingTargetSceneComponent;
+			USceneComponent* HomingScene = NewObject<USceneComponent>(ProjectileActor);
+			HomingScene->SetWorldLocation(TargetLocation);
+			HomingScene->RegisterComponent();
+			ProjectileActor->HomingTargetSceneComponent = HomingScene;
+			ProjectileActor->ProjectileMovement->HomingTargetComponent = HomingScene;
 		}
 
 		ProjectileActor->ProjectileMovement->HomingAccelerationMagnitude = FMath::FRandRange(MinHomingAcceleration, MaxHomingAcceleration);

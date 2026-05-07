@@ -45,13 +45,13 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Combat")
 	FOnDeathSignature OnDeathDelegate;
 
-	UPROPERTY(Replicated=OnRep_Stunned, BlueprintReadOnly, Category = "Combat")
+	UPROPERTY(ReplicatedUsing=OnRep_Stunned, BlueprintReadOnly, Category = "Combat")
 	bool bIsStunned = false;
 
-	UPROPERTY(Replicated=OnRep_Burned, BlueprintReadOnly, Category = "Combat")
+	UPROPERTY(ReplicatedUsing=OnRep_Burned, BlueprintReadOnly, Category = "Combat")
 	bool bIsBurned = false;
 
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Combat")
+	UPROPERTY(ReplicatedUsing=OnRep_BeingShocked, BlueprintReadOnly, Category = "Combat")
 	bool bIsBeingShocked = false;
 
 	virtual void StunTagChanged(const FGameplayTag CallBackTag, int32 NewCount);
@@ -63,6 +63,9 @@ public:
 
 	UFUNCTION()
 	virtual void OnRep_Burned();
+
+	UFUNCTION()
+	virtual void OnRep_BeingShocked();
 protected:
 	virtual void BeginPlay() override;
 	virtual void InitAbilityActorInfo();

@@ -109,6 +109,7 @@ void AAuraCharacterBase::StunTagChanged(const FGameplayTag CallBackTag, int32 Ne
 
 void AAuraCharacterBase::OnRep_Stunned()
 {
+	UpdateMovementSpeedFromDebuffs();
 }
 
 void AAuraCharacterBase::UpdateMovementSpeedFromDebuffs()
@@ -124,6 +125,11 @@ void AAuraCharacterBase::BurnTagChanged(const FGameplayTag CallBackTag, int32 Ne
 
 void AAuraCharacterBase::OnRep_Burned()
 {
+}
+
+void AAuraCharacterBase::OnRep_BeingShocked()
+{
+	UpdateMovementSpeedFromDebuffs();
 }
 
 void AAuraCharacterBase::BeginPlay()

@@ -11,6 +11,7 @@
 #include "AI/AuraAIController.h"
 #include "AI/AuraAIBlackboardKeys.h"
 #include "Aura/Aura.h"
+#include "Aura/AuraLogChannels.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "UI/Widget/AuraUserWidget.h"
@@ -46,11 +47,39 @@ void AAuraEnemy::PossessedBy(AController* NewController)
 	if (!HasAuthority()) return;
 
 	AuraAIController = Cast<AAuraAIController>(NewController);
+	if (!AuraAIController)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: NewController on %s is not an AAuraAIController."),
+			__FUNCTION__, *GetNameSafe(this));
+		return;
+	}
 
-	AuraAIController->GetBlackboardComponent()->InitializeBlackboard(*BehaviorTree->BlackboardAsset);
+	if (!BehaviorTree)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: BehaviorTree is not set on %s."),
+			__FUNCTION__, *GetNameSafe(this));
+		return;
+	}
+
+	if (!BehaviorTree->BlackboardAsset)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: BehaviorTree %s has no BlackboardAsset."),
+			__FUNCTION__, *GetNameSafe(BehaviorTree));
+		return;
+	}
+
+	UBlackboardComponent* BlackboardComp = AuraAIController->GetBlackboardComponent();
+	if (!BlackboardComp)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: BlackboardComponent is null on %s."),
+			__FUNCTION__, *GetNameSafe(AuraAIController));
+		return;
+	}
+
+	BlackboardComp->InitializeBlackboard(*BehaviorTree->BlackboardAsset);
 	AuraAIController->RunBehaviorTree(BehaviorTree);
-	AuraAIController->GetBlackboardComponent()->SetValueAsBool(AuraBBKeys::HitReacting, false);
-	AuraAIController->GetBlackboardComponent()->SetValueAsBool(AuraBBKeys::RangedAttacker, CharacterClass != ECharacterClass::Warrior);
+	BlackboardComp->SetValueAsBool(AuraBBKeys::HitReacting, false);
+	BlackboardComp->SetValueAsBool(AuraBBKeys::RangedAttacker, CharacterClass != ECharacterClass::Warrior);
 }
 
 void AAuraEnemy::HighLightActor()
