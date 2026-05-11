@@ -15,4 +15,6 @@ namespace AuraBBKeys
 	static const FName HitReacting = TEXT("HitReacting");
 	static const FName RangedAttacker = TEXT("RangedAttacker");
 	static const FName Dead = TEXT("Dead");
+	static const FName Stunned = TEXT("Stunned");
+	static const FName BeingShocked = TEXT("IsBeingShocked");
 }

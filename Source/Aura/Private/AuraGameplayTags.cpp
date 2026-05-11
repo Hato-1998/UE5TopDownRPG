@@ -119,6 +119,37 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	FName("Damage.Physical"), FString("Physical Damage Type"));
 
 	/*
+	* Debuff Types
+	*/
+
+	GameplayTags.Debuff = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Debuff"), FString("Debuff Type"));
+
+	GameplayTags.Debuff_Burn = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Debuff.Burn"), FString("Burn Debuff Type"));
+
+	GameplayTags.Debuff_Stun = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Debuff.Stun"), FString("Stun Debuff Type"));
+
+	GameplayTags.Debuff_Arcane = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Debuff.Arcane"), FString("Arcane Debuff Type"));
+
+	GameplayTags.Debuff_Physical = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Debuff.Physical"), FString("Physical Debuff Type"));
+
+	GameplayTags.Debuff_Chance = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Debuff.Chance"), FString("Chance Debuff Type"));
+
+	GameplayTags.Debuff_Damage = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Debuff.Damage"), FString("Damage Debuff Type"));
+
+	GameplayTags.Debuff_Frequency = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Debuff.Frequency"), FString("Frequency Debuff Type"));
+
+	GameplayTags.Debuff_Duration = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Debuff.Duration"), FString("Duration Debuff Type"));
+
+	/*
 	 * Resistance Types
 	 */
 
@@ -149,6 +180,15 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Lightning, GameplayTags.Attribute_Secondary_ResLightning);
 	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Arcane, GameplayTags.Attribute_Secondary_ResArcane);
 	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Physical, GameplayTags.Attribute_Secondary_ResPhysical);
+
+	/*
+	 * Map of Damage Types to Debuff Types
+	 */
+
+	GameplayTags.DamageTypesToDebuffs.Add(GameplayTags.Damage_Fire, GameplayTags.Debuff_Burn);
+	GameplayTags.DamageTypesToDebuffs.Add(GameplayTags.Damage_Physical, GameplayTags.Debuff_Physical);
+	GameplayTags.DamageTypesToDebuffs.Add(GameplayTags.Damage_Arcane, GameplayTags.Debuff_Arcane);
+	GameplayTags.DamageTypesToDebuffs.Add(GameplayTags.Damage_Lightning, GameplayTags.Debuff_Stun);
 
 	/*
 	 * Global Tag
@@ -198,6 +238,17 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	FName("Abilities.Type.None"), FString("None Abilities Type"));
 
 	/*
+	 * Passive Abilities
+	 */
+
+	GameplayTags.Abilities_Passive_HaloOfProtection = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Abilities.Passive.HaloOfProtection"), FString("Halo Of Protection Passive Ability"));
+	GameplayTags.Abilities_Passive_LifeSiphon = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Abilities.Passive.LifeSiphon"), FString("Life Siphon Passive Ability"));
+	GameplayTags.Abilities_Passive_ManaSiphon = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Abilities.Passive.ManaSiphon"), FString("Mana Siphon Passive Ability"));
+
+	/*
 	 * Cooldown
 	 */
 
@@ -239,5 +290,21 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	 */
 	GameplayTags.Message = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Message"), FString("Parent tag for message types"));
+
+
+	/*
+	 * Player Block Tag
+	 */
+
+	GameplayTags.Player_Block_Input = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Player.Block.Input"), FString("Player Block Input Tag"));
+	GameplayTags.Player_Block_InputPressed = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Player.Block.Input.Pressed"), FString("Player Block Input Pressed Tag"));
+	GameplayTags.Player_Block_InputReleased = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Player.Block.Input.Released"), FString("Player Block Input Released Tag"));
+	GameplayTags.Player_Block_InputHeld = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Player.Block.Input.Held"), FString("Player Block Input Held Tag"));
+	GameplayTags.Player_Block_CursorTrace = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Player.Block.Input.CursorTrace"), FString("Player Block Cursor Trace Tag"));
 
 }

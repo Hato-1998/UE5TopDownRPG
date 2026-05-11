@@ -11,6 +11,7 @@
 #include "AI/AuraAIController.h"
 #include "AI/AuraAIBlackboardKeys.h"
 #include "Aura/Aura.h"
+#include "Aura/AuraLogChannels.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "UI/Widget/AuraUserWidget.h"
@@ -35,6 +36,8 @@ AAuraEnemy::AAuraEnemy()
 
 	HealthBar = CreateDefaultSubobject<UWidgetComponent>("HealthBar");
 	HealthBar->SetupAttachment(GetRootComponent());
+
+	BaseWalkSpeed = 250.f;
 }
 
 void AAuraEnemy::PossessedBy(AController* NewController)
@@ -44,11 +47,39 @@ void AAuraEnemy::PossessedBy(AController* NewController)
 	if (!HasAuthority()) return;
 
 	AuraAIController = Cast<AAuraAIController>(NewController);
+	if (!AuraAIController)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: NewController on %s is not an AAuraAIController."),
+			__FUNCTION__, *GetNameSafe(this));
+		return;
+	}
 
-	AuraAIController->GetBlackboardComponent()->InitializeBlackboard(*BehaviorTree->BlackboardAsset);
+	if (!BehaviorTree)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: BehaviorTree is not set on %s."),
+			__FUNCTION__, *GetNameSafe(this));
+		return;
+	}
+
+	if (!BehaviorTree->BlackboardAsset)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: BehaviorTree %s has no BlackboardAsset."),
+			__FUNCTION__, *GetNameSafe(BehaviorTree));
+		return;
+	}
+
+	UBlackboardComponent* BlackboardComp = AuraAIController->GetBlackboardComponent();
+	if (!BlackboardComp)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: BlackboardComponent is null on %s."),
+			__FUNCTION__, *GetNameSafe(AuraAIController));
+		return;
+	}
+
+	BlackboardComp->InitializeBlackboard(*BehaviorTree->BlackboardAsset);
 	AuraAIController->RunBehaviorTree(BehaviorTree);
-	AuraAIController->GetBlackboardComponent()->SetValueAsBool(AuraBBKeys::HitReacting, false);
-	AuraAIController->GetBlackboardComponent()->SetValueAsBool(AuraBBKeys::RangedAttacker, CharacterClass != ECharacterClass::Warrior);
+	BlackboardComp->SetValueAsBool(AuraBBKeys::HitReacting, false);
+	BlackboardComp->SetValueAsBool(AuraBBKeys::RangedAttacker, CharacterClass != ECharacterClass::Warrior);
 }
 
 void AAuraEnemy::HighLightActor()
@@ -77,14 +108,14 @@ int32 AAuraEnemy::GetXPReward_Implementation() const
 	return XPReward.GetValueAtLevel(Level);
 }
 
-void AAuraEnemy::Die()
+void AAuraEnemy::Die(const FVector& DeathImpulse)
 {
 	HealthBar->SetVisibility(false);
 	SetLifeSpan(LifeSpan);
 
 	if (AuraAIController) AuraAIController->GetBlackboardComponent()->SetValueAsBool(AuraBBKeys::Dead, true);
 
-	Super::Die();
+	Super::Die(DeathImpulse);
 }
 
 void AAuraEnemy::BeginPlay()
@@ -99,6 +130,10 @@ void AAuraEnemy::InitAbilityActorInfo()
 {
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
 	Cast<UAuraAbilitySystemComponent>(AbilitySystemComponent)->AbilityActorInfoSet();
+
+	AbilitySystemComponent->RegisterGameplayTagEvent(
+	FAuraGameplayTags::Get().Debuff_Stun,
+	EGameplayTagEventType::NewOrRemoved).AddUObject(this, &AAuraEnemy::StunTagChanged);
 
 	if (HasAuthority())
 	{
@@ -132,6 +167,8 @@ void AAuraEnemy::InitAbilityActorInfo()
 	AbilitySystemComponent->RegisterGameplayTagEvent(FAuraGameplayTags::Get().Effects_HitReact, EGameplayTagEventType::NewOrRemoved).AddUObject(
 		this, &AAuraEnemy::HitReactTagChanged);
 
+	OnAscRegistered.Broadcast(AbilitySystemComponent);
+
 	// 초기값 브로드캐스트
 	OnHealthChanged.Broadcast(AuraAS->GetHealth());
 	OnMaxHealthChanged.Broadcast(AuraAS->GetMaxHealth());
@@ -141,7 +178,7 @@ void AAuraEnemy::HitReactTagChanged(const FGameplayTag CallbackTag, int32 NewCou
 {
 	bHitReacting = NewCount > 0;
 
-	GetCharacterMovement()->MaxWalkSpeed = bHitReacting ? 0.f :BaseWalkSpeed;
+	UpdateMovementSpeedFromDebuffs();
 
 	if (AuraAIController && AuraAIController->GetBlackboardComponent())
 	{
@@ -152,4 +189,30 @@ void AAuraEnemy::HitReactTagChanged(const FGameplayTag CallbackTag, int32 NewCou
 void AAuraEnemy::InitializeDefaultAttributes() const
 {
 	UAuraAbilitySystemLibrary::InitializeDefaultAttributes(this, CharacterClass, Level, AbilitySystemComponent);
+}
+
+void AAuraEnemy::StunTagChanged(const FGameplayTag CallBackTag, int32 NewCount)
+{
+	Super::StunTagChanged(CallBackTag, NewCount);
+
+	if (AuraAIController && AuraAIController->GetBlackboardComponent())
+	{
+		AuraAIController->GetBlackboardComponent()->SetValueAsBool(AuraBBKeys::Stunned, bIsStunned);
+	}
+}
+
+void AAuraEnemy::SetBeingShocked_Implementation(bool bBeingShocked)
+{
+	Super::SetBeingShocked_Implementation(bBeingShocked);
+
+	if (AuraAIController && AuraAIController->GetBlackboardComponent())
+	{
+		AuraAIController->GetBlackboardComponent()->SetValueAsBool(AuraBBKeys::BeingShocked, bBeingShocked);
+	}
+}
+
+void AAuraEnemy::UpdateMovementSpeedFromDebuffs()
+{
+	const bool bMovementLocked = bIsStunned || bIsBeingShocked || bHitReacting;
+	GetCharacterMovement()->MaxWalkSpeed = bMovementLocked ? 0.f : BaseWalkSpeed;
 }

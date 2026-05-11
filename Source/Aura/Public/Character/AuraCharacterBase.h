@@ -8,6 +8,7 @@
 #include "Interaction/CombatInterface.h"
 #include "AuraCharacterBase.generated.h"
 
+class UAuraDebuffNiagaraComponent;
 class UAbilitySystemComponent;
 class UAttributeSet;
 class UGameplayEffect;
@@ -25,17 +26,50 @@ class AURA_API AAuraCharacterBase : public ACharacter, public IAbilitySystemInte
 public:
 	AAuraCharacterBase();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	UAttributeSet* GetAttributeSet() const { return AttributeSet; }
 
 	UFUNCTION(NetMulticast, Reliable)
-	virtual void MulticastHandleDeath();
+	virtual void MulticastHandleDeath(const FVector& DeathImpulse);
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	TArray<FTaggedMontage> AttackMontages;
+
+	virtual FOnASCRegistered& GetOnASCRegisteredDelegate() override { return OnAscRegistered; }
+	virtual FOnDeathSignature& GetOnDeathDelegate() override { return OnDeathDelegate; }
+
+	FOnASCRegistered OnAscRegistered;
+
+	UPROPERTY(BlueprintAssignable, Category = "GAS|Combat")
+	FOnDeathSignature OnDeathDelegate;
+
+	UPROPERTY(ReplicatedUsing=OnRep_Stunned, BlueprintReadOnly, Category = "Combat")
+	bool bIsStunned = false;
+
+	UPROPERTY(ReplicatedUsing=OnRep_Burned, BlueprintReadOnly, Category = "Combat")
+	bool bIsBurned = false;
+
+	UPROPERTY(ReplicatedUsing=OnRep_BeingShocked, BlueprintReadOnly, Category = "Combat")
+	bool bIsBeingShocked = false;
+
+	virtual void StunTagChanged(const FGameplayTag CallBackTag, int32 NewCount);
+
+	UFUNCTION()
+	virtual void OnRep_Stunned();
+
+	virtual void BurnTagChanged(const FGameplayTag CallBackTag, int32 NewCount);
+
+	UFUNCTION()
+	virtual void OnRep_Burned();
+
+	UFUNCTION()
+	virtual void OnRep_BeingShocked();
 protected:
 	virtual void BeginPlay() override;
 	virtual void InitAbilityActorInfo();
+	virtual void UpdateMovementSpeedFromDebuffs();
 
 	void ApplyEffectToSelf(const TSubclassOf<UGameplayEffect>& GameplayEffectClass, float Level) const;
 	virtual void InitializeDefaultAttributes() const;
@@ -47,7 +81,7 @@ protected:
 	virtual AActor* GetCombatTarget_Implementation() const override;
 	virtual void SetCombatTarget_Implementation(AActor* InCombatTarget) override;
 
-	virtual void Die() override;
+	virtual void Die(const FVector& DeathImpulse) override;
 
 	virtual UAnimMontage* GetHitReactMontage_Implementation() override;
 
@@ -63,6 +97,9 @@ protected:
 	virtual int32 GetSummonCount_Implementation() const override;
 
 	virtual void IncrementSummonCount_Implementation(int32 Amount) override;
+
+	virtual bool IsBeingShocked_Implementation() const override;
+	virtual void SetBeingShocked_Implementation(bool bBeingShocked) override;
 
 	UPROPERTY()
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
@@ -106,6 +143,15 @@ protected:
 	bool bDead = false;
 
 	int32 SummonCount = 0;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float BaseWalkSpeed = 600.f;
+
+	UPROPERTY(VisibleInstanceOnly)
+	TObjectPtr<UAuraDebuffNiagaraComponent> BurnDebuffComponent;
+
+	UPROPERTY(VisibleInstanceOnly)
+	TObjectPtr<UAuraDebuffNiagaraComponent> StunDebuffComponent;
 private:
 
 	UPROPERTY(EditAnywhere, Category = "Abilities")

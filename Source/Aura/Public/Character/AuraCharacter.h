@@ -25,6 +25,7 @@ public:
 	virtual void OnRep_PlayerState() override;
 
 	virtual int32 GetPlayerLevel_Implementation() const override;
+	virtual USkeletalMeshComponent* GetWeaponMesh_Implementation() const override;
 
 	/*
 	 * Player Interface
@@ -46,6 +47,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UNiagaraComponent> LevelUpNiagaraComponent;
+
+	virtual void OnRep_Stunned() override;
+	virtual void OnRep_Burned() override;
 
 private:
 

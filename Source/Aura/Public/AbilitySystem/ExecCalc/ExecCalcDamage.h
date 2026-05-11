@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AuraGameplayTags.h"
 #include "GameplayEffectExecutionCalculation.h"
 #include "ExecCalcDamage.generated.h"
 
@@ -18,4 +19,7 @@ public:
 	UExecCalcDamage();
 
 	virtual void Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams, FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const override;
+
+private:
+	void DetermineDebuff(const FGameplayEffectSpec& Spec, const FAuraGameplayTags& Tags) const;
 };

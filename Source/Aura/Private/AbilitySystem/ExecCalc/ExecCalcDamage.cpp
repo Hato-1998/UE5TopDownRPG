@@ -8,6 +8,7 @@
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Data/CharacterClassInfo.h"
+#include "Aura/AuraLogChannels.h"
 #include "Interaction/CombatInterface.h"
 
 struct AuraDamageStatics
@@ -62,8 +63,38 @@ UExecCalcDamage::UExecCalcDamage()
 	RelevantAttributesToCapture.Add(DamageStatics().ResPhysicalDef);
 }
 
+void UExecCalcDamage::DetermineDebuff(const FGameplayEffectSpec& Spec, const FAuraGameplayTags& Tags) const
+{
+	for (const TTuple<FGameplayTag, FGameplayTag>& Pair : Tags.DamageTypesToDebuffs)
+	{
+		const FGameplayTag& DamageType = Pair.Key;
+
+		const float DamageTypeMag = Spec.GetSetByCallerMagnitude(DamageType, false, -1.f);
+		if (DamageTypeMag <= -.5f) continue;
+
+		const float SourceDebuffChance = Spec.GetSetByCallerMagnitude(Tags.Debuff_Chance, false, 0.f);
+		const bool bDebuff = FMath::FRandRange(0.f, 100.f) <= SourceDebuffChance;
+		if (!bDebuff) continue;
+
+		FGameplayEffectContextHandle ContextHandle = Spec.GetContext();
+
+		UAuraAbilitySystemLibrary::SetIsSuccessfulDebuff(ContextHandle, true);
+		UAuraAbilitySystemLibrary::SetDamageType(ContextHandle, DamageType);
+
+		const float DebuffDamage = Spec.GetSetByCallerMagnitude(Tags.Debuff_Damage, false, 0.f);
+		const float DebuffDuration = Spec.GetSetByCallerMagnitude(Tags.Debuff_Duration, false, 0.f);
+		const float DebuffFrequency = Spec.GetSetByCallerMagnitude(Tags.Debuff_Frequency, false, 0.f);
+
+		UAuraAbilitySystemLibrary::SetDebuffDamage(ContextHandle, DebuffDamage);
+		UAuraAbilitySystemLibrary::SetDebuffDuration(ContextHandle, DebuffDuration);
+		UAuraAbilitySystemLibrary::SetDebuffFrequency(ContextHandle, DebuffFrequency);
+
+		break;
+	}
+}
+
 void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams,
-	FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const
+                                             FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const
 {
 	const UAbilitySystemComponent* SourceASC = ExecutionParams.GetSourceAbilitySystemComponent();
 	const UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
@@ -87,10 +118,13 @@ void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutio
 	EvaluateParameters.SourceTags = SourceTags;
 	EvaluateParameters.TargetTags = TargetTags;
 
+	// Debuff
+	const FAuraGameplayTags& Tags = FAuraGameplayTags::Get();
+
+	DetermineDebuff(Spec, Tags);
+
 	// 데미지 정보 불러오기 — 속성 저항 적용
 	float Damage = 0.f;
-
-	const FAuraGameplayTags& Tags = FAuraGameplayTags::Get();
 
 	TMap<FGameplayTag, FGameplayEffectAttributeCaptureDefinition> ResTagToCaptureDef;
 	ResTagToCaptureDef.Add(Tags.Attribute_Secondary_ResFire, DamageStatics().ResFireDef);
@@ -160,11 +194,42 @@ void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutio
 
 	UCharacterClassInfo* CharacterClassInfo = UAuraAbilitySystemLibrary::GetCharacterClassInfo(SourceAvatarActor);
 
-	FRealCurve* ArmorPenetrationCurve = CharacterClassInfo->DamageCalcCurveTable->FindCurve(FName("ArmorPenetration"), FString());
-	const float ArmorPenetrationCoefficient = ArmorPenetrationCurve->Eval(SourcePlayerLevel);
+	float ArmorPenetrationCoefficient = 1.f;
+	float EffectiveArmorCoefficient = 1.f;
 
-	FRealCurve* EffectiveArmorCurve = CharacterClassInfo->DamageCalcCurveTable->FindCurve(FName("EffectiveArmor"), FString());
-	const float EffectiveArmorCoefficient = EffectiveArmorCurve->Eval(TargetPlayerLevel);
+	if (!CharacterClassInfo)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: CharacterClassInfo is not set. Using default armor coefficients."), __FUNCTION__);
+	}
+	else if (!CharacterClassInfo->DamageCalcCurveTable)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: DamageCalcCurveTable is not set on %s. Using default armor coefficients."),
+			__FUNCTION__, *GetNameSafe(CharacterClassInfo));
+	}
+	else
+	{
+		if (const FRealCurve* ArmorPenetrationCurve =
+			CharacterClassInfo->DamageCalcCurveTable->FindCurve(FName("ArmorPenetration"), FString()))
+		{
+			ArmorPenetrationCoefficient = ArmorPenetrationCurve->Eval(SourcePlayerLevel);
+		}
+		else
+		{
+			UE_LOG(LogAura, Warning, TEXT("%hs: ArmorPenetration curve row is missing from %s. Using default coefficient."),
+				__FUNCTION__, *GetNameSafe(CharacterClassInfo->DamageCalcCurveTable));
+		}
+
+		if (const FRealCurve* EffectiveArmorCurve =
+			CharacterClassInfo->DamageCalcCurveTable->FindCurve(FName("EffectiveArmor"), FString()))
+		{
+			EffectiveArmorCoefficient = EffectiveArmorCurve->Eval(TargetPlayerLevel);
+		}
+		else
+		{
+			UE_LOG(LogAura, Warning, TEXT("%hs: EffectiveArmor curve row is missing from %s. Using default coefficient."),
+				__FUNCTION__, *GetNameSafe(CharacterClassInfo->DamageCalcCurveTable));
+		}
+	}
 
 	TargetArmor = (TargetArmor * EffectiveArmorCoefficient) - (SourceArmorPenetration * ArmorPenetrationCoefficient);
 	TargetArmor = FMath::Max(TargetArmor, 0.f);

@@ -53,17 +53,65 @@ void UAuraAbilitySystemComponent::AddCharacterPassiveAbilities(
 	}
 }
 
+void UAuraAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& Tag)
+{
+	if (!Tag.IsValid()) return;
+
+	FScopedAbilityListLock ActiveScopeLock(*this);
+	for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
+	{
+		if (!AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(Tag)) continue;
+
+		if (AbilitySpec.Ability && AbilitySpec.Ability->bReplicateInputDirectly && !IsOwnerActorAuthoritative())
+		{
+			ServerSetInputPressed(AbilitySpec.Handle);
+		}
+
+		AbilitySpecInputPressed(AbilitySpec);
+
+		if (AbilitySpec.IsActive())
+		{
+			PRAGMA_DISABLE_DEPRECATION_WARNINGS
+			TArray<UGameplayAbility*> Instances = AbilitySpec.GetAbilityInstances();
+			const FGameplayAbilityActivationInfo& ActivationInfo =
+				Instances.IsEmpty() ? AbilitySpec.ActivationInfo : Instances.Last()->GetCurrentActivationInfoRef();
+			PRAGMA_ENABLE_DEPRECATION_WARNINGS
+
+			InvokeReplicatedEvent(
+				EAbilityGenericReplicatedEvent::InputPressed,
+				AbilitySpec.Handle,
+				ActivationInfo.GetActivationPredictionKey());
+		}
+	}
+}
+
 void UAuraAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& Tag)
 {
-	if (Tag.IsValid())
+	if (!Tag.IsValid()) return;
+
+	FScopedAbilityListLock ActiveScopeLock(*this);
+	for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
 	{
-		for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
+		if (!AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(Tag)) continue;
+		if (!AbilitySpec.IsActive()) continue;
+
+		if (AbilitySpec.Ability && AbilitySpec.Ability->bReplicateInputDirectly && !IsOwnerActorAuthoritative())
 		{
-			if (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(Tag))
-			{
-				AbilitySpecInputReleased(AbilitySpec);
-			}
+			ServerSetInputReleased(AbilitySpec.Handle);
 		}
+
+		AbilitySpecInputReleased(AbilitySpec);
+
+		PRAGMA_DISABLE_DEPRECATION_WARNINGS
+		TArray<UGameplayAbility*> Instances = AbilitySpec.GetAbilityInstances();
+		const FGameplayAbilityActivationInfo& ActivationInfo =
+			Instances.IsEmpty() ? AbilitySpec.ActivationInfo : Instances.Last()->GetCurrentActivationInfoRef();
+		PRAGMA_ENABLE_DEPRECATION_WARNINGS
+
+		InvokeReplicatedEvent(
+			EAbilityGenericReplicatedEvent::InputReleased,
+			AbilitySpec.Handle,
+			ActivationInfo.GetActivationPredictionKey());
 	}
 }
 
@@ -71,6 +119,7 @@ void UAuraAbilitySystemComponent::AbilityInputTagHeld(const FGameplayTag& Tag)
 {
 	if (Tag.IsValid())
 	{
+		FScopedAbilityListLock ActiveScopeLock(*this);
 		for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
 		{
 			if (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(Tag))
@@ -150,13 +199,23 @@ FGameplayTag UAuraAbilitySystemComponent::GetStatusFromAbilityTag(const FGamepla
 	return FGameplayTag();
 }
 
-FGameplayTag UAuraAbilitySystemComponent::GetInputTagFromAbilityTag(const FGameplayTag& AbilityTag)
+FGameplayTag UAuraAbilitySystemComponent::GetSlotFromAbilityTag(const FGameplayTag& AbilityTag)
 {
 	if (const FGameplayAbilitySpec* Spec = GetSpecFromAbilityTag(AbilityTag))
 	{
 		return GetInputTagFromSpec(*Spec);
 	}
 	return FGameplayTag();
+}
+
+bool UAuraAbilitySystemComponent::SlotIsEmpty(const FGameplayTag& Slot)
+{
+	FScopedAbilityListLock ActiveScopeLock(*this);
+	for (FGameplayAbilitySpec& AbilitySpec :GetActivatableAbilities())
+	{
+
+	}
+
 }
 
 FGameplayAbilitySpec* UAuraAbilitySystemComponent::GetSpecFromAbilityTag(const FGameplayTag& AbilityTag)
@@ -167,7 +226,7 @@ FGameplayAbilitySpec* UAuraAbilitySystemComponent::GetSpecFromAbilityTag(const F
 		if (!AbilitySpec.Ability) continue;
 		for (FGameplayTag Tag : AbilitySpec.Ability.Get()->GetAssetTags())
 		{
-			if (Tag.MatchesTag(AbilityTag))
+			if (Tag.MatchesTagExact(AbilityTag))
 			{
 				return &AbilitySpec;
 			}

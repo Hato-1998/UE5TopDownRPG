@@ -17,8 +17,11 @@ FAuraAttributeInfo UAttributeInfo::FindAttributeInfoForTag(const FGameplayTag& A
 
 	if (bLogNotFound)
 	{
-		UE_LOG(LogAura, Error, TEXT("AttributeInfo: Could not find attribute info for tag %s in %s"),
-			*AttributeTag.ToString(), *GetNameSafe(this))
+		UE_LOG(LogAura, Error,
+			TEXT("AttributeInfo: Could not find metadata for tag %s in %s. Entries=%d. Check DA_AttributeInfo coverage."),
+			*AttributeTag.ToString(),
+			*GetNameSafe(this),
+			AttributeEntries.Num())
 	}
 
 	return FAuraAttributeInfo();
