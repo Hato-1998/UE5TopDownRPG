@@ -3,9 +3,7 @@
 
 #include "AbilitySystem/Passive/PassiveNiagaraComponent.h"
 
-#include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "Interaction/CombatInterface.h"
 
 UPassiveNiagaraComponent::UPassiveNiagaraComponent()
 {
@@ -15,20 +13,22 @@ UPassiveNiagaraComponent::UPassiveNiagaraComponent()
 void UPassiveNiagaraComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	// 바인딩은 캐릭터의 InitAbilityActorInfo에서 BindToASC()로 주입한다.
+}
 
-	if (UAuraAbilitySystemComponent* ASC = Cast<UAuraAbilitySystemComponent>(UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetOwner())))
+void UPassiveNiagaraComponent::BindToASC(UAbilitySystemComponent* InASC)
+{
+	if (BoundASC.IsValid() && BoundHandle.IsValid())
 	{
-		ASC->ActivatePassiveAbility.AddUObject(this, &UPassiveNiagaraComponent::OnPassiveActivate);
+		BoundASC->ActivatePassiveAbility.Remove(BoundHandle);
 	}
-	else if (ICombatInterface*  CombatInterface = Cast<ICombatInterface>(GetOwner()))
+	BoundASC = nullptr;
+	BoundHandle.Reset();
+
+	if (UAuraAbilitySystemComponent* Aura = Cast<UAuraAbilitySystemComponent>(InASC))
 	{
-		CombatInterface->GetOnASCRegisteredDelegate().AddLambda([this](UAbilitySystemComponent* ASC)
-		{
-			if (UAuraAbilitySystemComponent* CombatASC = Cast<UAuraAbilitySystemComponent>(UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetOwner())))
-			{
-				CombatASC->ActivatePassiveAbility.AddUObject(this, &UPassiveNiagaraComponent::OnPassiveActivate);
-			}
-		});
+		BoundHandle = Aura->ActivatePassiveAbility.AddUObject(this, &UPassiveNiagaraComponent::OnPassiveActivate);
+		BoundASC = Aura;
 	}
 }
 
