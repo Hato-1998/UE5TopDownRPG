@@ -89,6 +89,10 @@ public:
 	FGameplayTag Abilities_Fire_FireBolt;
 	FGameplayTag Abilities_Lightning_Electrocute;
 
+	FGameplayTag Abilities_Passive_HaloOfProtection;
+	FGameplayTag Abilities_Passive_LifeSiphon;
+	FGameplayTag Abilities_Passive_ManaSiphon;
+
 	FGameplayTag Cooldown_Fire_FireBolt;
 
 	/*
@@ -126,8 +130,6 @@ public:
 
 	TMap<FGameplayTag, FGameplayTag> DamageTypesToResistances;
 	TMap<FGameplayTag, FGameplayTag> DamageTypesToDebuffs;
-
-protected:
 
 private:
 	static FAuraGameplayTags GameplayTags;
