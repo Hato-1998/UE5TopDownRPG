@@ -201,9 +201,11 @@ void USpellMenuWidgetController::BroadcastSpellGlobeSelected()
 	FString Description;
 	FString NextLevelDescription;
 	const bool bHasAbilityDescription = GetAuraASC()->GetDescriptionByAbilityTag(SelectedAbility.Ability, Description, NextLevelDescription);
+
 	if (!bHasAbilityDescription && AbilityInfo && SelectedAbility.Ability.IsValid() && !SelectedAbility.Ability.MatchesTagExact(FAuraGameplayTags::Get().Abilities_None))
 	{
 		Description = UAuraGameplayAbility::GetLockedDescription(AbilityInfo->FindAbilityInfoForTag(SelectedAbility.Ability).LevelRequirement);
 	}
+
 	SpellGlobeSelectedDelegate.Broadcast(bEnableSpendPoints, bEnableEquip, Description, NextLevelDescription);
 }

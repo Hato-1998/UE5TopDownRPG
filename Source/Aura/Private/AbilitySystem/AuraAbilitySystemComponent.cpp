@@ -7,6 +7,7 @@
 #include "AuraGameplayTags.h"
 #include "GameplayAbilityBlueprint.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
+#include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "AbilitySystem/Data/AbilityInfo.h"
 #include "Aura/AuraLogChannels.h"
@@ -249,8 +250,18 @@ FGameplayAbilitySpec* UAuraAbilitySystemComponent::GetSpecWithSlot(const FGamepl
 bool UAuraAbilitySystemComponent::IsPassiveAbility(const FGameplayAbilitySpec& Spec) const
 {
 	const UAbilityInfo* AbilityInfo = UAuraAbilitySystemLibrary::GetAbilityInfo(GetAvatarActor());
+	if (!AbilityInfo)
+	{
+		return false;
+	}
+
 	const FGameplayTag AbilityTag = GetAbilityTagFromSpec(Spec);
 	const FAuraAbilityInfo& Info = AbilityInfo->FindAbilityInfoForTag(AbilityTag);
+	if (!Info.AbilityTag.IsValid())
+	{
+		return false;
+	}
+
 	const FGameplayTag AbilityType = Info.AbilityType;
 
 	return AbilityType.MatchesTagExact(FAuraGameplayTags::Get().Abilities_Type_Passive);
@@ -302,6 +313,12 @@ void UAuraAbilitySystemComponent::ServerUpgradeAttribute_Implementation(const FG
 {
 	AActor* LocalAvatarActor = GetAvatarActor();
 	if (!AttributeTag.IsValid() || !LocalAvatarActor || !LocalAvatarActor->Implements<UPlayerInterface>())
+	{
+		return;
+	}
+
+	const UAuraAttributeSet* AuraAttributeSet = GetSet<UAuraAttributeSet>();
+	if (!AuraAttributeSet || !AuraAttributeSet->TagsToAttributes.Contains(AttributeTag))
 	{
 		return;
 	}
@@ -358,47 +375,46 @@ void UAuraAbilitySystemComponent::ServerEquipAbility_Implementation(const FGamep
 	if (FGameplayAbilitySpec* AbilitySpec = GetSpecFromAbilityTag(AbilityTag))
 	{
 		const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
-		const FGameplayTag& PrevSlot = GetInputTagFromSpec(*AbilitySpec);
-		const FGameplayTag& Status = GetStatusTagFromSpec(*AbilitySpec);
+		const FGameplayTag PrevSlot = GetInputTagFromSpec(*AbilitySpec);
+		const FGameplayTag Status = GetStatusTagFromSpec(*AbilitySpec);
 
 		const bool bStatusValid = Status == GameplayTags.Abilities_Status_Equipped ||
 			Status == GameplayTags.Abilities_Status_Unlocked;
 
-		if (bStatusValid)
+		if (!bStatusValid)
 		{
-			if (!SlotIsEmpty(Slot))
-			{
-				FGameplayAbilitySpec* SpecWithSlot = GetSpecWithSlot(Slot);
-				if (SpecWithSlot)
-				{
-					if (AbilityTag.MatchesTagExact(GetAbilityTagFromSpec(*SpecWithSlot)))
-					{
-						ClientEquipAbility(AbilityTag, GameplayTags.Abilities_Status_Equipped, Slot, PrevSlot);
-						return;
-					}
-
-					if (IsPassiveAbility(*SpecWithSlot))
-					{
-						MulticastActivatePassiveEffect(GetAbilityTagFromSpec(*SpecWithSlot), false);
-						DeactivatePassiveAbility.Broadcast(GetAbilityTagFromSpec(*SpecWithSlot));
-					}
-
-					ClearSlot(SpecWithSlot);
-				}
-			}
-
-			if (!AbilityHasAnySlot(*AbilitySpec))
-			{
-				if (IsPassiveAbility(*AbilitySpec))
-				{
-					TryActivateAbility(AbilitySpec->Handle);
-					MulticastActivatePassiveEffect(GetAbilityTagFromSpec(*AbilitySpec), true);
-				}
-			}
-			AssignSlotToAbility(*AbilitySpec, Slot);
-			MarkAbilitySpecDirty(*AbilitySpec);
+			return;
 		}
 
+		if (!SlotIsEmpty(Slot))
+		{
+			FGameplayAbilitySpec* SpecWithSlot = GetSpecWithSlot(Slot);
+			if (SpecWithSlot)
+			{
+				if (AbilityTag.MatchesTagExact(GetAbilityTagFromSpec(*SpecWithSlot)))
+				{
+					ClientEquipAbility(AbilityTag, GameplayTags.Abilities_Status_Equipped, Slot, PrevSlot);
+					return;
+				}
+
+				if (IsPassiveAbility(*SpecWithSlot))
+				{
+					MulticastActivatePassiveEffect(GetAbilityTagFromSpec(*SpecWithSlot), false);
+					DeactivatePassiveAbility.Broadcast(GetAbilityTagFromSpec(*SpecWithSlot));
+				}
+
+				ClearSlot(SpecWithSlot);
+			}
+		}
+
+		if (!AbilityHasAnySlot(*AbilitySpec) && IsPassiveAbility(*AbilitySpec))
+		{
+			TryActivateAbility(AbilitySpec->Handle);
+			MulticastActivatePassiveEffect(GetAbilityTagFromSpec(*AbilitySpec), true);
+		}
+
+		AssignSlotToAbility(*AbilitySpec, Slot);
+		MarkAbilitySpecDirty(*AbilitySpec);
 		ClientEquipAbility(AbilityTag, GameplayTags.Abilities_Status_Equipped, Slot, PrevSlot);
 	}
 }
