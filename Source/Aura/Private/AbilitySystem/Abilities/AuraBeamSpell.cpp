@@ -126,3 +126,63 @@ void UAuraBeamSpell::UnbindDeathDelegates(AActor* PrimaryTarget, const TArray<AA
 		}
 	}
 }
+
+
+FString UAuraBeamSpell::GetDescription(int32 Level)
+{
+	const int32 CurrentDamage = Damage.GetValueAtLevel(Level);
+	const float ManaCost = FMath::Abs(GetManaCost(Level));
+	const float Cooldown = GetCooldown(Level);
+	if (Level == 1)
+	{
+		return FString::Printf(TEXT(
+			// Title
+			"<Title>ELECTROCUTE</>\n\n"
+
+			// Details
+			"<Small>Level: </><Level>%d</>\n\n"
+			"<Small>Mana Cost: </><ManaCost>%.1f</>\n\n"
+			"<Small>Cooldown: </><Cooldown>%.1f</>\n\n"
+
+			// Description
+			"<Default>Emits a beam of lightning, connecting with the target, dealing: </><Damage>%d</>\n\n"
+			"<Default> Lightning Damage with a chance to Stun</>"
+		), Level, ManaCost, Cooldown, CurrentDamage);
+	}
+	else
+	{
+		return FString::Printf(TEXT(
+			// Title
+			"<Title>ELECTROCUTE</>\n\n"
+
+			// Details
+			"<Small>Level: </><Level>%d</>\n\n"
+			"<Small>Mana Cost: </><ManaCost>%.1f</>\n\n"
+			"<Small>Cooldown: </><Cooldown>%.1f</>\n\n"
+
+			// Description
+			"<Default>Emits a beam of lightning, also chaining to </><Damage>%d</><Default> additional nearby targets, dealing: </><Damage>%d</>\n\n"
+			"<Default> Lightning Damage each with a chance to Stun</>"
+		), Level, ManaCost, Cooldown, FMath::Min(Level - 1, MaxNumShockTargets), CurrentDamage);
+	}
+}
+
+FString UAuraBeamSpell::GetNextLevelDescription(int32 Level)
+{
+	const int32 CurrentDamage = Damage.GetValueAtLevel(Level);
+	const float ManaCost = FMath::Abs(GetManaCost(Level));
+	const float Cooldown = GetCooldown(Level);
+	return FString::Printf(TEXT(
+		// Title
+		"<Title>ELECTROCUTE</>\n\n"
+
+		// Details
+		"<Small>Level: </><Level>%d</>\n\n"
+		"<Small>Mana Cost: </><ManaCost>%.1f</>\n\n"
+		"<Small>Cooldown: </><Cooldown>%.1f</>\n\n"
+
+		// Description
+		"<Default>Emits a beam of lightning, also chaining to </><Damage>%d</><Default> additional nearby targets, dealing: </><Damage>%d</>\n\n"
+		"<Default> Lightning Damage each with a chance to Stun</>"
+	), Level, ManaCost, Cooldown, FMath::Min(Level - 1, MaxNumShockTargets), CurrentDamage);
+}

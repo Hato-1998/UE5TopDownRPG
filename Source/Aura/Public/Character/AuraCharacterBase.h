@@ -40,11 +40,14 @@ public:
 
 	virtual FOnASCRegistered& GetOnASCRegisteredDelegate() override { return OnAscRegistered; }
 	virtual FOnDeathSignature& GetOnDeathDelegate() override { return OnDeathDelegate; }
+	virtual FOnDamageSignature& GetOnDamageSignature() override { return OnDamageDelegate; }
 
 	FOnASCRegistered OnAscRegistered;
 
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Combat")
 	FOnDeathSignature OnDeathDelegate;
+
+	FOnDamageSignature OnDamageDelegate;
 
 	UPROPERTY(ReplicatedUsing=OnRep_Stunned, BlueprintReadOnly, Category = "Combat")
 	bool bIsStunned = false;
@@ -67,6 +70,10 @@ public:
 
 	UFUNCTION()
 	virtual void OnRep_BeingShocked();
+
+	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
+	                         AController* EventInstigator, AActor* DamageCauser) override;
+
 protected:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginPlay() override;

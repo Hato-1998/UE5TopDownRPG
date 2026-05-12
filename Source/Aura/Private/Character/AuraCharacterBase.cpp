@@ -287,3 +287,11 @@ void AAuraCharacterBase::Dissolve()
 		StartWeaponDissolveTimeline(DynamicMatInst);
 	}
 }
+
+float AAuraCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
+                                     AController* EventInstigator, AActor* DamageCauser)
+{
+	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	OnDamageDelegate.Broadcast(ActualDamage);
+	return ActualDamage;
+}
