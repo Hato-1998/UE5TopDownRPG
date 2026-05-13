@@ -20,6 +20,7 @@ class AURA_API AAuraProjectile : public AActor
 public:
 	// Sets default values for this actor's properties
 	AAuraProjectile();
+	virtual void Destroyed() override;
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
@@ -34,10 +35,10 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	void OnHit();
-	virtual void Destroyed() override;
+
 
 	UFUNCTION()
-	void OnSphereOverlap(
+	virtual void OnSphereOverlap(
 		UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp,

@@ -23,7 +23,8 @@
       "Read(//d/Program Files/**)",
       "Read(//e/Program Files/**)",
       "Bash(ls \"/d/\" 2>/dev/null | head -20; echo \"---\"; ls \"/e/\" 2>/dev/null | head -20; echo \"===\"; find /c /d /e -maxdepth 3 -type d -name \"UE_5*\" 2>/dev/null | head)",
-      "Bash(ls \"/d/UnrealEngine/UE_5.7/Engine/Plugins/Runtime/GameplayAbilities/Source/GameplayAbilities/Public/Abilities/\" 2>/dev/null | head; find \"/d/UnrealEngine/UE_5.7/Engine/Plugins/Runtime/GameplayAbilities\" -name \"GameplayAbility.h\" 2>/dev/null)"
+      "Bash(ls \"/d/UnrealEngine/UE_5.7/Engine/Plugins/Runtime/GameplayAbilities/Source/GameplayAbilities/Public/Abilities/\" 2>/dev/null | head; find \"/d/UnrealEngine/UE_5.7/Engine/Plugins/Runtime/GameplayAbilities\" -name \"GameplayAbility.h\" 2>/dev/null)",
+      "PowerShell($isAdmin = \\([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent\\(\\)\\).IsInRole\\([Security.Principal.WindowsBuiltInRole]::Administrator\\); \"IsAdmin: $isAdmin\")"
     ]
   }
 }
