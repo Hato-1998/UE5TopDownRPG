@@ -27,7 +27,5 @@ void AAuraFireBall::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AA
 			DamageEffectParams.TargetAbilitySystemComponent = TargetASC;
 			UAuraAbilitySystemLibrary::ApplyGameplayEffect(DamageEffectParams);
 		}
-
-		Destroy();
 	}
 }
