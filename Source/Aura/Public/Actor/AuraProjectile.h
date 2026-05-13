@@ -32,10 +32,13 @@ public:
 	TObjectPtr<USceneComponent> HomingTargetSceneComponent;
 
 protected:
+	bool bHit = false;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	void OnHit();
 
+	UFUNCTION(BlueprintCallable)
+	void OnHit();
 
 	UFUNCTION()
 	virtual void OnSphereOverlap(
@@ -45,12 +48,12 @@ protected:
 		int32 OtherBodyIndex,
 		bool bFromSweep,
 		const FHitResult& SweepResult);
+
+	bool IsValidOverlap(AActor* OtherActor) const;
 private:
 
 	UPROPERTY(EditDefaultsOnly)
 	float LifeTime = 5.0f;
-
-	bool bHit = false;
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<USphereComponent> Sphere;

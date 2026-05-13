@@ -29,6 +29,6 @@ protected:
 private:
 
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<AAuraFireBall> FireBlastClass;
+	TSubclassOf<AAuraFireBall> FireBallClass;
 
 };

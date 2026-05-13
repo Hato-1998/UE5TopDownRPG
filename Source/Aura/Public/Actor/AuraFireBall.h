@@ -16,6 +16,11 @@ class AURA_API AAuraFireBall : public AAuraProjectile
 
 public:
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void StartOutgoingTimeLine();
+
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<AActor> ReturnToActor;
 protected:
 	virtual void BeginPlay() override;
 
