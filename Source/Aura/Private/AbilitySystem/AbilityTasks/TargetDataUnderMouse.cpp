@@ -15,7 +15,20 @@ UTargetDataUnderMouse* UTargetDataUnderMouse::CreateTargetDataUnderMouse(UGamepl
 
 void UTargetDataUnderMouse::Activate()
 {
-	const bool bIsLocallyControlled = Ability->GetCurrentActorInfo()->IsLocallyControlled();
+	if (!Ability || !AbilitySystemComponent.IsValid())
+	{
+		EndTask();
+		return;
+	}
+
+	const FGameplayAbilityActorInfo* ActorInfo = Ability->GetCurrentActorInfo();
+	if (!ActorInfo)
+	{
+		EndTask();
+		return;
+	}
+
+	const bool bIsLocallyControlled = ActorInfo->IsLocallyControlled();
 	if (bIsLocallyControlled)
 	{
 		SendMouseCursorData();
@@ -39,11 +52,23 @@ void UTargetDataUnderMouse::Activate()
 	}
 }
 
-void UTargetDataUnderMouse::SendMouseCursorData() const
+void UTargetDataUnderMouse::SendMouseCursorData()
 {
+	if (!Ability || !AbilitySystemComponent.IsValid())
+	{
+		EndTask();
+		return;
+	}
+
 	FScopedPredictionWindow ScopedPredictionWindow(AbilitySystemComponent.Get());
 
-	APlayerController* PC = Ability->GetCurrentActorInfo()->PlayerController.Get();
+	const FGameplayAbilityActorInfo* ActorInfo = Ability->GetCurrentActorInfo();
+	APlayerController* PC = ActorInfo ? ActorInfo->PlayerController.Get() : nullptr;
+	if (!PC)
+	{
+		EndTask();
+		return;
+	}
 
 	FHitResult CursorHit;
 	PC->GetHitResultUnderCursor(ECC_Target, false, CursorHit);
@@ -67,8 +92,14 @@ void UTargetDataUnderMouse::SendMouseCursorData() const
 }
 
 void UTargetDataUnderMouse::OnTargetDataReplicatedCallBack(const FGameplayAbilityTargetDataHandle& DataHandle,
-	FGameplayTag ActivationTag) const
+	FGameplayTag ActivationTag)
 {
+	if (!AbilitySystemComponent.IsValid())
+	{
+		EndTask();
+		return;
+	}
+
 	AbilitySystemComponent->ConsumeClientReplicatedTargetData(GetAbilitySpecHandle(), GetActivationPredictionKey());
 	if (ShouldBroadcastAbilityTaskDelegates())
 	{

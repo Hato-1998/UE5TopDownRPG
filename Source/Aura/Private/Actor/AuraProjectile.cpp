@@ -79,30 +79,8 @@ void AAuraProjectile::Destroyed()
 void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
                                       UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (!OtherActor)
-	{
-		return;
-	}
-
-	if (!DamageEffectParams.SourceAbilitySystemComponent)
-	{
-		UE_LOG(LogAura, Warning, TEXT("%hs: Projectile %s has no SourceAbilitySystemComponent. Overlap ignored."),
-			__FUNCTION__, *GetNameSafe(this));
-		return;
-	}
-
-	AActor* SourceAvatarActor = DamageEffectParams.SourceAbilitySystemComponent->GetAvatarActor();
-	if (!SourceAvatarActor)
-	{
-		UE_LOG(LogAura, Warning, TEXT("%hs: Projectile %s has no source avatar. Overlap ignored."),
-			__FUNCTION__, *GetNameSafe(this));
-		return;
-	}
-
-	if (SourceAvatarActor == OtherActor) return;
-	if (!UAuraAbilitySystemLibrary::IsNotFriend(SourceAvatarActor, OtherActor)) return;
+	if (!IsValidOverlap(OtherActor)) return;
 	if (!bHit) OnHit();
-
 	if (HasAuthority())
 	{
 		if (UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor))
@@ -127,4 +105,32 @@ void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
 		Destroy();
 	}
 	else bHit = true;
+}
+
+bool AAuraProjectile::IsValidOverlap(AActor* OtherActor) const
+{
+	if (!OtherActor)
+	{
+		return false;
+	}
+
+	if (!DamageEffectParams.SourceAbilitySystemComponent)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: Projectile %s has no SourceAbilitySystemComponent. Overlap ignored."),
+			__FUNCTION__, *GetNameSafe(this));
+		return false;
+	}
+
+	AActor* SourceAvatarActor = DamageEffectParams.SourceAbilitySystemComponent->GetAvatarActor();
+	if (!SourceAvatarActor)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: Projectile %s has no source avatar. Overlap ignored."),
+			__FUNCTION__, *GetNameSafe(this));
+		return false;
+	}
+
+	if (SourceAvatarActor == OtherActor) return false;
+	if (!UAuraAbilitySystemLibrary::IsNotFriend(SourceAvatarActor, OtherActor)) return false;
+
+	return true;
 }

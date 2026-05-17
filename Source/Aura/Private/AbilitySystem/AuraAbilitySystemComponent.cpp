@@ -7,6 +7,7 @@
 #include "AuraGameplayTags.h"
 #include "GameplayAbilityBlueprint.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
+#include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "AbilitySystem/Data/AbilityInfo.h"
 #include "Aura/AuraLogChannels.h"
@@ -213,9 +214,69 @@ bool UAuraAbilitySystemComponent::SlotIsEmpty(const FGameplayTag& Slot)
 	FScopedAbilityListLock ActiveScopeLock(*this);
 	for (FGameplayAbilitySpec& AbilitySpec :GetActivatableAbilities())
 	{
-
+		if (AbilityHasTag(AbilitySpec, Slot))
+		{
+			return false;
+		}
 	}
 
+	return true;
+}
+
+bool UAuraAbilitySystemComponent::AbilityHasTag(const FGameplayAbilitySpec& AbilitySpec, const FGameplayTag& Tag)
+{
+	return AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(Tag);
+}
+
+bool UAuraAbilitySystemComponent::AbilityHasAnySlot(const FGameplayAbilitySpec& AbilitySpec)
+{
+	return AbilitySpec.GetDynamicSpecSourceTags().HasTag(FAuraGameplayTags::Get().Input);
+}
+
+FGameplayAbilitySpec* UAuraAbilitySystemComponent::GetSpecWithSlot(const FGameplayTag& Slot)
+{
+	FScopedAbilityListLock ActiveScopeLock(*this);
+	for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
+	{
+		if (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(Slot))
+		{
+			return &AbilitySpec;
+		}
+	}
+
+	return nullptr;
+}
+
+bool UAuraAbilitySystemComponent::IsPassiveAbility(const FGameplayAbilitySpec& Spec) const
+{
+	const UAbilityInfo* AbilityInfo = UAuraAbilitySystemLibrary::GetAbilityInfo(GetAvatarActor());
+	if (!AbilityInfo)
+	{
+		return false;
+	}
+
+	const FGameplayTag AbilityTag = GetAbilityTagFromSpec(Spec);
+	const FAuraAbilityInfo& Info = AbilityInfo->FindAbilityInfoForTag(AbilityTag);
+	if (!Info.AbilityTag.IsValid())
+	{
+		return false;
+	}
+
+	const FGameplayTag AbilityType = Info.AbilityType;
+
+	return AbilityType.MatchesTagExact(FAuraGameplayTags::Get().Abilities_Type_Passive);
+}
+
+void UAuraAbilitySystemComponent::AssignSlotToAbility(FGameplayAbilitySpec& Spec, const FGameplayTag& Slot)
+{
+	ClearSlot(&Spec);
+	Spec.GetDynamicSpecSourceTags().AddTag(Slot);
+}
+
+void UAuraAbilitySystemComponent::MulticastActivatePassiveEffect_Implementation(const FGameplayTag& AbilityTag,
+	bool bActivate)
+{
+	ActivatePassiveAbility.Broadcast(AbilityTag, bActivate);
 }
 
 FGameplayAbilitySpec* UAuraAbilitySystemComponent::GetSpecFromAbilityTag(const FGameplayTag& AbilityTag)
@@ -252,6 +313,12 @@ void UAuraAbilitySystemComponent::ServerUpgradeAttribute_Implementation(const FG
 {
 	AActor* LocalAvatarActor = GetAvatarActor();
 	if (!AttributeTag.IsValid() || !LocalAvatarActor || !LocalAvatarActor->Implements<UPlayerInterface>())
+	{
+		return;
+	}
+
+	const UAuraAttributeSet* AuraAttributeSet = GetSet<UAuraAttributeSet>();
+	if (!AuraAttributeSet || !AuraAttributeSet->TagsToAttributes.Contains(AttributeTag))
 	{
 		return;
 	}
@@ -308,8 +375,8 @@ void UAuraAbilitySystemComponent::ServerEquipAbility_Implementation(const FGamep
 	if (FGameplayAbilitySpec* AbilitySpec = GetSpecFromAbilityTag(AbilityTag))
 	{
 		const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
-		const FGameplayTag& PrevSlot = GetInputTagFromSpec(*AbilitySpec);
-		const FGameplayTag& Status = GetStatusTagFromSpec(*AbilitySpec);
+		const FGameplayTag PrevSlot = GetInputTagFromSpec(*AbilitySpec);
+		const FGameplayTag Status = GetStatusTagFromSpec(*AbilitySpec);
 
 		const bool bStatusValid = Status == GameplayTags.Abilities_Status_Equipped ||
 			Status == GameplayTags.Abilities_Status_Unlocked;
@@ -319,22 +386,34 @@ void UAuraAbilitySystemComponent::ServerEquipAbility_Implementation(const FGamep
 			return;
 		}
 
-		if (AbilityHasSlot(AbilitySpec, Slot))
+		if (!SlotIsEmpty(Slot))
 		{
-			ClientEquipAbility(AbilityTag, GameplayTags.Abilities_Status_Equipped, Slot, PrevSlot);
-			return;
+			FGameplayAbilitySpec* SpecWithSlot = GetSpecWithSlot(Slot);
+			if (SpecWithSlot)
+			{
+				if (AbilityTag.MatchesTagExact(GetAbilityTagFromSpec(*SpecWithSlot)))
+				{
+					ClientEquipAbility(AbilityTag, GameplayTags.Abilities_Status_Equipped, Slot, PrevSlot);
+					return;
+				}
+
+				if (IsPassiveAbility(*SpecWithSlot))
+				{
+					MulticastActivatePassiveEffect(GetAbilityTagFromSpec(*SpecWithSlot), false);
+					DeactivatePassiveAbility.Broadcast(GetAbilityTagFromSpec(*SpecWithSlot));
+				}
+
+				ClearSlot(SpecWithSlot);
+			}
 		}
 
-		ClearAbilityOfSlot(Slot);
-		ClearSlot(AbilitySpec);
-		AbilitySpec->GetDynamicSpecSourceTags().AddTag(Slot);
-
-		if (Status.MatchesTagExact(GameplayTags.Abilities_Status_Unlocked))
+		if (!AbilityHasAnySlot(*AbilitySpec) && IsPassiveAbility(*AbilitySpec))
 		{
-			ClearAbilityStatus(AbilitySpec);
-			AbilitySpec->GetDynamicSpecSourceTags().AddTag(GameplayTags.Abilities_Status_Equipped);
+			TryActivateAbility(AbilitySpec->Handle);
+			MulticastActivatePassiveEffect(GetAbilityTagFromSpec(*AbilitySpec), true);
 		}
 
+		AssignSlotToAbility(*AbilitySpec, Slot);
 		MarkAbilitySpecDirty(*AbilitySpec);
 		ClientEquipAbility(AbilityTag, GameplayTags.Abilities_Status_Equipped, Slot, PrevSlot);
 	}
@@ -377,7 +456,6 @@ void UAuraAbilitySystemComponent::ClearSlot(FGameplayAbilitySpec* Spec)
 {
 	const FGameplayTag Slot = GetInputTagFromSpec(*Spec);
 	Spec->GetDynamicSpecSourceTags().RemoveTag(Slot);
-	MarkAbilitySpecDirty(*Spec);
 }
 
 void UAuraAbilitySystemComponent::ClearAbilityOfSlot(const FGameplayTag& Slot)

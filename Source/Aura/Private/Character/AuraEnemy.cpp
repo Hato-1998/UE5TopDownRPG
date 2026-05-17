@@ -8,6 +8,7 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "AbilitySystem/AuraAttributeSet.h"
+#include "AbilitySystem/Passive/PassiveNiagaraComponent.h"
 #include "AI/AuraAIController.h"
 #include "AI/AuraAIBlackboardKeys.h"
 #include "Aura/Aura.h"
@@ -130,6 +131,13 @@ void AAuraEnemy::InitAbilityActorInfo()
 {
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
 	Cast<UAuraAbilitySystemComponent>(AbilitySystemComponent)->AbilityActorInfoSet();
+
+	TArray<UPassiveNiagaraComponent*> PassiveComps;
+	GetComponents<UPassiveNiagaraComponent>(PassiveComps);
+	for (UPassiveNiagaraComponent* Comp : PassiveComps)
+	{
+		Comp->BindToASC(AbilitySystemComponent);
+	}
 
 	AbilitySystemComponent->RegisterGameplayTagEvent(
 	FAuraGameplayTags::Get().Debuff_Stun,

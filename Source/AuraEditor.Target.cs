@@ -9,6 +9,7 @@ public class AuraEditorTarget : TargetRules
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V6;
+		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_7;
 
 		ExtraModuleNames.AddRange( new string[] { "Aura" } );
 	}

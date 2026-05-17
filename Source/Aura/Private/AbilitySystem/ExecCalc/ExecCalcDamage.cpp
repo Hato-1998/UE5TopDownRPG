@@ -10,6 +10,8 @@
 #include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "Aura/AuraLogChannels.h"
 #include "Interaction/CombatInterface.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/DamageType.h"
 
 struct AuraDamageStatics
 {
@@ -126,11 +128,16 @@ void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutio
 	// 데미지 정보 불러오기 — 속성 저항 적용
 	float Damage = 0.f;
 
-	TMap<FGameplayTag, FGameplayEffectAttributeCaptureDefinition> ResTagToCaptureDef;
-	ResTagToCaptureDef.Add(Tags.Attribute_Secondary_ResFire, DamageStatics().ResFireDef);
-	ResTagToCaptureDef.Add(Tags.Attribute_Secondary_ResLightning, DamageStatics().ResLightningDef);
-	ResTagToCaptureDef.Add(Tags.Attribute_Secondary_ResArcane, DamageStatics().ResArcaneDef);
-	ResTagToCaptureDef.Add(Tags.Attribute_Secondary_ResPhysical, DamageStatics().ResPhysicalDef);
+	static const TMap<FGameplayTag, const FGameplayEffectAttributeCaptureDefinition*> ResTagToCaptureDef = []
+	{
+		const FAuraGameplayTags& AuraTags = FAuraGameplayTags::Get();
+		TMap<FGameplayTag, const FGameplayEffectAttributeCaptureDefinition*> Map;
+		Map.Add(AuraTags.Attribute_Secondary_ResFire,      &DamageStatics().ResFireDef);
+		Map.Add(AuraTags.Attribute_Secondary_ResLightning, &DamageStatics().ResLightningDef);
+		Map.Add(AuraTags.Attribute_Secondary_ResArcane,    &DamageStatics().ResArcaneDef);
+		Map.Add(AuraTags.Attribute_Secondary_ResPhysical,  &DamageStatics().ResPhysicalDef);
+		return Map;
+	}();
 
 	for (const TTuple<FGameplayTag, FGameplayTag>& Pair : Tags.DamageTypesToResistances)
 	{
@@ -142,12 +149,50 @@ void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutio
 		const float DamageTypeValue = Spec.GetSetByCallerMagnitude(DamageTypeTag, false, 0.f);
 		if (DamageTypeValue <= 0.f) continue;
 
+		const FGameplayEffectAttributeCaptureDefinition* CaptureDef = ResTagToCaptureDef.FindRef(ResistanceTag);
+		if (!CaptureDef) continue;
+
 		float Resistance = 0.f;
-		ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(
-			ResTagToCaptureDef[ResistanceTag], EvaluateParameters, Resistance);
+		ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(*CaptureDef, EvaluateParameters, Resistance);
 		Resistance = FMath::Clamp(Resistance, 0.f, 100.f);
 
 		Damage += DamageTypeValue * (100.f - Resistance) / 100.f;
+	}
+
+	FGameplayEffectContextHandle EffectContextHandle = Spec.GetEffectContext();
+
+	// 저항 적용 후 데미지가 0 이하이면 이후 falloff/crit/block/armor 계산 전부 생략 (최소 1 데미지 정책 유지)
+	if (Damage <= 0.f)
+	{
+		Damage = 1.f;
+		const FGameplayModifierEvaluatedData EvalData(UAuraAttributeSet::GetIncomingDamageAttribute(), EGameplayModOp::Additive, Damage);
+		OutExecutionOutput.AddOutputModifier(EvalData);
+		return;
+	}
+
+	// Radial Damage falloff
+	if (UAuraAbilitySystemLibrary::IsRadialDamage(EffectContextHandle))
+	{
+		if (ICombatInterface* CombatTarget = Cast<ICombatInterface>(TargetAvatarActor))
+		{
+			FDelegateHandle DamageHandle = CombatTarget->GetOnDamageSignature().AddLambda(
+				[&Damage](float DamageAmount) { Damage = DamageAmount; });
+
+			UGameplayStatics::ApplyRadialDamageWithFalloff(
+				TargetAvatarActor,
+				Damage,
+				0.f,
+				UAuraAbilitySystemLibrary::GetRadialDamageOrigin(EffectContextHandle),
+				UAuraAbilitySystemLibrary::GetRadialDamageInnerRadius(EffectContextHandle),
+				UAuraAbilitySystemLibrary::GetRadialDamageOuterRadius(EffectContextHandle),
+				1.f,
+				UDamageType::StaticClass(),
+				TArray<AActor*>(),
+				SourceAvatarActor,
+				nullptr);
+
+			CombatTarget->GetOnDamageSignature().Remove(DamageHandle);
+		}
 	}
 
 	// 크리 확률 가져오기, 크리시 데미지 2배 + 크리데미지로 보정
@@ -179,8 +224,6 @@ void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutio
 	{
 		Damage *= 0.5f;
 	}
-
-	FGameplayEffectContextHandle EffectContextHandle = Spec.GetEffectContext();
 
 	UAuraAbilitySystemLibrary::SetIsCriticalHit(EffectContextHandle, bCriticalHit);
 	UAuraAbilitySystemLibrary::SetIsBlockedHit(EffectContextHandle, bBlocked);

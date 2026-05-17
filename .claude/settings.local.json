@@ -13,7 +13,18 @@
       "mcp__unreal_editor__get_asset_info",
       "Bash(awk '/NODE_DUMP_START/,/NODE_DUMP_END/' \"E:/Git_Project/UE5TopDownRPG/Saved/Logs/Aura.log\")",
       "Bash(awk '/PIN_DUMP_START/,/PIN_DUMP_END/' \"E:/Git_Project/UE5TopDownRPG/Saved/Logs/Aura.log\")",
-      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"E:\\\\Git_Project\\\\UE5TopDownRPG\\\\Content\\\\Blueprints\\\\AbilitySystem\\\\Aura\\\\Abilities\\\\Fire\\\\FireBolt\\\\GA_FireBolt.uasset\"\\); $text = [System.Text.Encoding]::ASCII.GetString\\($bytes\\); \\($text -split '[\\\\x00-\\\\x1f]+' | Where-Object { $_ -match 'FireBol|Event\\\\.Montage|MakeLiteral|WaitGameplayEvent|EventTag' } | Sort-Object -Unique\\) -join \"`n\")"
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"E:\\\\Git_Project\\\\UE5TopDownRPG\\\\Content\\\\Blueprints\\\\AbilitySystem\\\\Aura\\\\Abilities\\\\Fire\\\\FireBolt\\\\GA_FireBolt.uasset\"\\); $text = [System.Text.Encoding]::ASCII.GetString\\($bytes\\); \\($text -split '[\\\\x00-\\\\x1f]+' | Where-Object { $_ -match 'FireBol|Event\\\\.Montage|MakeLiteral|WaitGameplayEvent|EventTag' } | Sort-Object -Unique\\) -join \"`n\")",
+      "Bash(git -C E:/Git_Project/UE5TopDownRPG diff -- Source/Aura/Private/Actor/AuraPointCollection.cpp)",
+      "WebSearch",
+      "PowerShell($paths = @\\('C:\\\\Program Files\\\\Epic Games', 'D:\\\\Program Files\\\\Epic Games', 'E:\\\\Program Files\\\\Epic Games', 'C:\\\\Epic Games', 'D:\\\\Epic Games', 'E:\\\\Epic Games'\\); foreach \\($p in $paths\\) { if \\(Test-Path $p\\) { Get-ChildItem $p -Directory | Select-Object -ExpandProperty FullName } })",
+      "Bash(ls /mnt/)",
+      "Read(//c//**)",
+      "Read(//c/Program Files/**)",
+      "Read(//d/Program Files/**)",
+      "Read(//e/Program Files/**)",
+      "Bash(ls \"/d/\" 2>/dev/null | head -20; echo \"---\"; ls \"/e/\" 2>/dev/null | head -20; echo \"===\"; find /c /d /e -maxdepth 3 -type d -name \"UE_5*\" 2>/dev/null | head)",
+      "Bash(ls \"/d/UnrealEngine/UE_5.7/Engine/Plugins/Runtime/GameplayAbilities/Source/GameplayAbilities/Public/Abilities/\" 2>/dev/null | head; find \"/d/UnrealEngine/UE_5.7/Engine/Plugins/Runtime/GameplayAbilities\" -name \"GameplayAbility.h\" 2>/dev/null)",
+      "PowerShell($isAdmin = \\([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent\\(\\)\\).IsInRole\\([Security.Principal.WindowsBuiltInRole]::Administrator\\); \"IsAdmin: $isAdmin\")"
     ]
   }
 }

@@ -43,6 +43,9 @@ public:
 	virtual void AddToSpellPoints_Implementation(int32 InSP) override;
 	virtual void AddToLevel_Implementation(int32 NumLevelUp) override;
 	virtual void LevelUp_Implementation() override;
+
+	virtual void ShowMagicCircle_Implementation(UMaterialInterface* DecalMaterial = nullptr) override;
+	virtual void HideMagicCircle_Implementation() override;
 	/** end Player Interface */
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)

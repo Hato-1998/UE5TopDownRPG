@@ -20,6 +20,7 @@ class AURA_API AAuraProjectile : public AActor
 public:
 	// Sets default values for this actor's properties
 	AAuraProjectile();
+	virtual void Destroyed() override;
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
@@ -27,29 +28,38 @@ public:
 	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
 	FDamageEffectParams DamageEffectParams;
 
+	UPROPERTY(BlueprintReadWrite)
+	FDamageEffectParams ExplosionDamageEffectParams;
+
 	UPROPERTY()
 	TObjectPtr<USceneComponent> HomingTargetSceneComponent;
 
 protected:
+	bool bHit = false;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	void OnHit();
-	virtual void Destroyed() override;
+
+	UFUNCTION(BlueprintCallable)
+	virtual void OnHit();
 
 	UFUNCTION()
-	void OnSphereOverlap(
+	virtual void OnSphereOverlap(
 		UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex,
 		bool bFromSweep,
 		const FHitResult& SweepResult);
+
+	bool IsValidOverlap(AActor* OtherActor) const;
+
+	UPROPERTY()
+	TObjectPtr<UAudioComponent> LoopingSoundComponent;
 private:
 
 	UPROPERTY(EditDefaultsOnly)
 	float LifeTime = 5.0f;
-
-	bool bHit = false;
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<USphereComponent> Sphere;
@@ -62,7 +72,4 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<USoundBase> LoopingSound;
-
-	UPROPERTY()
-	TObjectPtr<UAudioComponent> LoopingSoundComponent;
 };
