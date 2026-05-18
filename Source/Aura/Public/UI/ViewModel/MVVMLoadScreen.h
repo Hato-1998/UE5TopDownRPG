@@ -5,8 +5,9 @@
 #include "CoreMinimal.h"
 #include "MVVMViewModelBase.h"
 #include "Templates/SubclassOf.h"
-#include "UI/ViewModel/MVVMLoadSlot.h"
 #include "MVVMLoadScreen.generated.h"
+
+class UMVVMLoadSlot;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSlotSelected);
 
@@ -39,6 +40,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void DeleteButtonPressed();
+
+	UFUNCTION(BlueprintCallable)
+	void PlayButtonPressed(int32 Slot);
 
 	void LoadData();
 
