@@ -24,7 +24,10 @@
       "Read(//e/Program Files/**)",
       "Bash(ls \"/d/\" 2>/dev/null | head -20; echo \"---\"; ls \"/e/\" 2>/dev/null | head -20; echo \"===\"; find /c /d /e -maxdepth 3 -type d -name \"UE_5*\" 2>/dev/null | head)",
       "Bash(ls \"/d/UnrealEngine/UE_5.7/Engine/Plugins/Runtime/GameplayAbilities/Source/GameplayAbilities/Public/Abilities/\" 2>/dev/null | head; find \"/d/UnrealEngine/UE_5.7/Engine/Plugins/Runtime/GameplayAbilities\" -name \"GameplayAbility.h\" 2>/dev/null)",
-      "PowerShell($isAdmin = \\([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent\\(\\)\\).IsInRole\\([Security.Principal.WindowsBuiltInRole]::Administrator\\); \"IsAdmin: $isAdmin\")"
+      "PowerShell($isAdmin = \\([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent\\(\\)\\).IsInRole\\([Security.Principal.WindowsBuiltInRole]::Administrator\\); \"IsAdmin: $isAdmin\")",
+      "Bash(\"D:/UnrealEngine/UE_5.7/Engine/Build/BatchFiles/Build.bat\" AuraEditor Win64 Development -Project=\"E:/Git_Project/UE5TopDownRPG/Aura.uproject\" -WaitMutex)",
+      "Bash(ls \"E:/Vs_c++/Bin/VC/Tools/MSVC/\" 2>&1)",
+      "Bash(rm -f E:/Git_Project/UE5TopDownRPG/Intermediate/Build/Win64/x64/UnrealEditor/Development/Aura/*.obj && rm -f \"E:/Git_Project/UE5TopDownRPG/Binaries/Win64/UnrealEditor-Aura.dll\" \"E:/Git_Project/UE5TopDownRPG/Binaries/Win64/UnrealEditor-Aura.pdb\" && echo \"Cleaned\")"
     ]
   }
 }

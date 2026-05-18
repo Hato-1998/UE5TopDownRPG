@@ -29,14 +29,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category= "Ability Info")
 	TObjectPtr<UAbilityInfo> AbilityInfo;
 
-	void SaveSlotData(UMVVMLoadSlot* LoadSlot, int32 SlotIndex);
-
-	ULoadScreenSaveGame* GetLoadScreenSaveGame(const FString& SlotName, int32 SlotIndex) const;
-
-	static void DeleteSlot(const FString& SlotName, int32 SlotIndex);
-
-	void TravelToMap(UMVVMLoadSlot* Slot);
-
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<USaveGame> LoadScreenSaveGameClass;
 
@@ -48,6 +40,23 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	TMap<FString, TSoftObjectPtr<UWorld>> Maps;
+
+	UPROPERTY(EditDefaultsOnly)
+	FName DefaultPlayerStartTag;
+
+	void SaveSlotData(UMVVMLoadSlot* LoadSlot, int32 SlotIndex);
+
+	ULoadScreenSaveGame* GetLoadScreenSaveGame(const FString& SlotName, int32 SlotIndex) const;
+
+	static void DeleteSlot(const FString& SlotName, int32 SlotIndex);
+
+	void TravelToMap(UMVVMLoadSlot* Slot);
+
+	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
+
+	ULoadScreenSaveGame* RetrieveInGameSaveData();
+	void SaveInGameSaveData(ULoadScreenSaveGame* SaveData);
+
 
 protected:
 	virtual void BeginPlay() override;

@@ -38,6 +38,9 @@ public:
 	UPROPERTY()
 	TEnumAsByte<ESaveSlotStatus> SlotStatus;
 
+	UPROPERTY()
+	FName PlayerStartTag;
+
 	/*
 	 * Field Notifies
 	 */
@@ -54,7 +57,4 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, FieldNotify, Setter, Getter, meta=(AllowPrivateAccess = "true"))
 	FString MapName;
-
-
-
 };

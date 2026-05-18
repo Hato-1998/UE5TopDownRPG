@@ -3,9 +3,13 @@
 
 #include "Game/AuraGameModeBase.h"
 
+#include "Game/AuraGameInstance.h"
 #include "Game/LoadScreenSaveGame.h"
+#include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/ViewModel/MVVMLoadSlot.h"
+
+class UAuraGameInstance;
 
 void AAuraGameModeBase::SaveSlotData(UMVVMLoadSlot* LoadSlot, int32 SlotIndex)
 {
@@ -16,6 +20,7 @@ void AAuraGameModeBase::SaveSlotData(UMVVMLoadSlot* LoadSlot, int32 SlotIndex)
 	LoadScreenSaveGame->PlayerName = LoadSlot->GetPlayerName();
 	LoadScreenSaveGame->MapName = LoadSlot->GetMapName();
 	LoadScreenSaveGame->SlotStatus = Taken;
+	LoadScreenSaveGame->PlayerStartTag = LoadSlot->PlayerStartTag;
 
 	UGameplayStatics::SaveGameToSlot(LoadScreenSaveGame, LoadSlot->LoadSlotName, SlotIndex);
 }
@@ -50,6 +55,54 @@ void AAuraGameModeBase::TravelToMap(UMVVMLoadSlot* Slot)
 	const int32 SlotIndex = Slot->SlotIndex;
 
 	UGameplayStatics::OpenLevelBySoftObjectPtr(Slot,Maps.FindChecked(Slot->GetMapName()));
+}
+
+AActor* AAuraGameModeBase::ChoosePlayerStart_Implementation(AController* Player)
+{
+	UAuraGameInstance* AuraGameInstance = Cast<UAuraGameInstance>(GetGameInstance());
+	TArray<AActor*> Actors;
+
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerStart::StaticClass(), Actors);
+
+	if (Actors.Num() > 0)
+	{
+		AActor* SelectActor = Actors[0];
+		for (AActor* Actor : Actors)
+		{
+			if (APlayerStart* PlayerStart = Cast<APlayerStart>(Actor))
+			{
+				if (PlayerStart->PlayerStartTag == AuraGameInstance->PlayerStartTag)
+				{
+					SelectActor = PlayerStart;
+					break;
+				}
+			}
+		}
+
+		return SelectActor;
+	}
+	return nullptr;
+}
+
+ULoadScreenSaveGame* AAuraGameModeBase::RetrieveInGameSaveData()
+{
+	UAuraGameInstance* AuraGameInstance = Cast<UAuraGameInstance>(GetGameInstance());
+
+	const FString SlotName = AuraGameInstance->LoadSlotName;
+	const int32 SlotIndex = AuraGameInstance->LoadSlotIndex;
+
+	return GetLoadScreenSaveGame(SlotName, SlotIndex);
+}
+
+void AAuraGameModeBase::SaveInGameSaveData(ULoadScreenSaveGame* SaveData)
+{
+	UAuraGameInstance* AuraGameInstance = Cast<UAuraGameInstance>(GetGameInstance());
+
+	const FString SlotName = AuraGameInstance->LoadSlotName;
+	const int32 SlotIndex = AuraGameInstance->LoadSlotIndex;
+	AuraGameInstance->PlayerStartTag = SaveData->PlayerStartTag;
+
+	UGameplayStatics::SaveGameToSlot(SaveData, SlotName, SlotIndex);
 }
 
 void AAuraGameModeBase::BeginPlay()
