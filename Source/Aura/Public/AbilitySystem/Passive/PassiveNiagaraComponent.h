@@ -29,8 +29,10 @@ protected:
 	virtual void BeginPlay() override;
 
 	void OnPassiveActivate(const FGameplayTag& AbilityTag, bool bActivate);
+	void OnStartupAbilitiesGiven();
 
 private:
 	TWeakObjectPtr<UAuraAbilitySystemComponent> BoundASC;
 	FDelegateHandle BoundHandle;
+	FDelegateHandle StartupAbilitiesHandle;
 };
