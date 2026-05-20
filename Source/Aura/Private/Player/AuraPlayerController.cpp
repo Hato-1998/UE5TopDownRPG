@@ -6,6 +6,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AuraGameplayTags.h"
 #include "Interaction/HighLightInterface.h"
+#include "Interaction/CombatInterface.h"
 #include "EnhancedInputSubsystems.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "Components/SplineComponent.h"
@@ -131,29 +132,52 @@ void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 	}
 }
 
+void AAuraPlayerController::HighlightActor(AActor* InActor)
+{
+	if (IsValid(InActor) && InActor->Implements<UHighLightInterface>())
+	{
+		IHighLightInterface::Execute_HighLightActor(InActor);
+	}
+}
+
+void AAuraPlayerController::UnHighlightActor(AActor* InActor)
+{
+	if (IsValid(InActor) && InActor->Implements<UHighLightInterface>())
+	{
+		IHighLightInterface::Execute_UnHighLightActor(InActor);
+	}
+}
+
 void AAuraPlayerController::CursorTrace()
 {
 	if (GetAuraASC() && GetAuraASC()->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Block_CursorTrace))
 	{
-		if (LastActor) LastActor->UnHighLightActor();
-		if (ThisActor) ThisActor->UnHighLightActor();
+		UnHighlightActor(LastActor);
+		UnHighlightActor(ThisActor);
 		LastActor = nullptr;
 		ThisActor = nullptr;
 		return;
 	}
 
 	const ECollisionChannel TraceChannel = IsValid(MagicCircle) ? ECC_ExcludePlayers : ECC_Visibility;
-	GetHitResultUnderCursor(
-		TraceChannel, false, CursorHit);
+	GetHitResultUnderCursor(TraceChannel, false, CursorHit);
 	if (!CursorHit.bBlockingHit) return;
 
 	LastActor = ThisActor;
-	ThisActor = CursorHit.GetActor();
+	AActor* HitActor = CursorHit.GetActor();
+	if (IsValid(HitActor) && HitActor->Implements<UHighLightInterface>())
+	{
+		ThisActor = HitActor;
+	}
+	else
+	{
+		ThisActor = nullptr;
+	}
 
 	if (LastActor != ThisActor)
 	{
-		if (LastActor) LastActor->UnHighLightActor();
-		if (ThisActor) ThisActor->HighLightActor();
+		UnHighlightActor(LastActor);
+		HighlightActor(ThisActor);
 	}
 }
 
@@ -163,7 +187,16 @@ void AAuraPlayerController::AbilityInputTagPressed(const FGameplayTag Tag)
 
 	if (Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_RMB))
 	{
-		bTargeting = ThisActor != nullptr;
+		if (IsValid(ThisActor))
+		{
+			TargetingStatus = ThisActor->Implements<UCombatInterface>()
+				? ETargetingStatus::TargetingEnemy
+				: ETargetingStatus::TargetingMapEntrance;
+		}
+		else
+		{
+			TargetingStatus = ETargetingStatus::NotTargeting;
+		}
 		bAutoRunning = false;
 	}
 
@@ -182,7 +215,7 @@ void AAuraPlayerController::AbilityInputTagReleased(const FGameplayTag Tag)
 
 	if (GetAuraASC()) GetAuraASC()->AbilityInputTagReleased(Tag);
 
-	if (!bTargeting && !bShiftKeyDown)
+	if (TargetingStatus == ETargetingStatus::NotTargeting && !bShiftKeyDown)
 	{
 		const APawn* ControlledPawn = GetPawn<APawn>();
 		if (FollowTime <= ShortPressThreshold && ControlledPawn)
@@ -210,7 +243,7 @@ void AAuraPlayerController::AbilityInputTagReleased(const FGameplayTag Tag)
 
 		}
 		FollowTime = 0.f;
-		bTargeting = false;
+		TargetingStatus = ETargetingStatus::NotTargeting;
 	}
 }
 
@@ -224,7 +257,7 @@ void AAuraPlayerController::AbilityInputTagHeld(const FGameplayTag Tag)
 		return;
 	}
 
-	if (bTargeting || bShiftKeyDown)
+	if (TargetingStatus == ETargetingStatus::TargetingEnemy || bShiftKeyDown)
 	{
 		if (GetAuraASC()) GetAuraASC()->AbilityInputTagHeld(Tag);
 	}

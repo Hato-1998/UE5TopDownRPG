@@ -28,8 +28,8 @@ public:
 	AAuraEnemy();
 	virtual void PossessedBy(AController* NewController) override;
 
-	virtual void HighLightActor() override;
-	virtual void UnHighLightActor() override;
+	virtual void HighLightActor_Implementation() override;
+	virtual void UnHighLightActor_Implementation() override;
 
 	virtual int32 GetPlayerLevel_Implementation() const override;
 	virtual int32 GetXPReward_Implementation() const override;
