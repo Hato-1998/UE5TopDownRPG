@@ -215,7 +215,7 @@ void AAuraPlayerController::AbilityInputTagReleased(const FGameplayTag Tag)
 
 	if (GetAuraASC()) GetAuraASC()->AbilityInputTagReleased(Tag);
 
-	if (TargetingStatus == ETargetingStatus::NotTargeting && !bShiftKeyDown)
+	if (TargetingStatus != ETargetingStatus::TargetingEnemy && !bShiftKeyDown)
 	{
 		const APawn* ControlledPawn = GetPawn<APawn>();
 		if (FollowTime <= ShortPressThreshold && ControlledPawn)
@@ -236,7 +236,7 @@ void AAuraPlayerController::AbilityInputTagReleased(const FGameplayTag Tag)
 				}
 			}
 
-			if (GetAuraASC() && !GetAuraASC()->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Block_InputReleased))
+			if (!ThisActor && GetAuraASC() && !GetAuraASC()->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Block_InputReleased))
 			{
 				UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ClickNiagaraSystem, CachedDestination);
 			}
@@ -265,9 +265,13 @@ void AAuraPlayerController::AbilityInputTagHeld(const FGameplayTag Tag)
 	{
 		FollowTime += GetWorld()->GetDeltaSeconds();
 
-		if (CursorHit.bBlockingHit) CachedDestination = CursorHit.ImpactPoint;
+		if (CursorHit.bBlockingHit)
 		{
-
+			CachedDestination = CursorHit.ImpactPoint;
+			if (IsValid(ThisActor) && ThisActor->Implements<UHighLightInterface>())
+			{
+				IHighLightInterface::Execute_SetMoveToLocation(ThisActor, CachedDestination);
+			}
 		}
 
 		if (APawn* ControllerPawn = GetPawn<APawn>())

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerStart.h"
 #include "Interaction/SaveInterface.h"
+#include "Interaction/HighLightInterface.h"
 #include "AuraCheckpoint.generated.h"
 
 class USphereComponent;
@@ -12,7 +13,7 @@ class USphereComponent;
  *
  */
 UCLASS()
-class AURA_API AAuraCheckpoint : public APlayerStart, public ISaveInterface
+class AURA_API AAuraCheckpoint : public APlayerStart, public ISaveInterface, public IHighLightInterface
 {
 	GENERATED_BODY()
 
@@ -21,6 +22,10 @@ public:
 
 	virtual bool ShouldLoadTransform_Implementation() override { return false;};
 	virtual void LoadActor_Implementation() override;
+
+	virtual void HighLightActor_Implementation() override;
+	virtual void UnHighLightActor_Implementation() override;
+	virtual void SetMoveToLocation_Implementation(FVector& OutDestination) override;
 
 	UPROPERTY(BlueprintReadOnly, SaveGame)
 	bool bReached = false;
@@ -42,11 +47,14 @@ protected:
 
 	void HandleGlowEffects();
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> CheckpointMesh;
+
 private:
 
 	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UStaticMeshComponent> CheckpointMesh;
+	TObjectPtr<USphereComponent> Sphere;
 
 	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<USphereComponent> Sphere;
+	TObjectPtr<USceneComponent> MoveToComponent;
 };
