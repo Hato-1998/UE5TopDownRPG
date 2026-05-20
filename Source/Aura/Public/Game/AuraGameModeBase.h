@@ -56,8 +56,10 @@ public:
 	ULoadScreenSaveGame* RetrieveInGameSaveData();
 	void SaveInGameSaveData(ULoadScreenSaveGame* SaveData);
 
-	void SaveWorldState(UWorld* World) const;
+	void SaveWorldState(UWorld* World, const FString& DestinationMapAssetName = FString("")) const;
 	void LoadWorldState(UWorld* World) const;
+
+	FString GetMapNameFromMapAssetName(const FString& MapAssetName) const;
 
 
 protected:

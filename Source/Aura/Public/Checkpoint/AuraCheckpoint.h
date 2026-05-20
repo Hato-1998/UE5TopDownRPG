@@ -27,8 +27,11 @@ public:
 	virtual void UnHighLightActor_Implementation() override;
 	virtual void SetMoveToLocation_Implementation(FVector& OutDestination) override;
 
-	UPROPERTY(BlueprintReadOnly, SaveGame)
+	UPROPERTY(BlueprintReadWrite, SaveGame)
 	bool bReached = false;
+
+	UPROPERTY(EditAnywhere)
+	bool bBindCallOverlapCallback = true;
 
 protected:
 	UFUNCTION()
@@ -45,12 +48,11 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void CheckpointReached(UMaterialInstanceDynamic* MaterialInstance);
 
+	UFUNCTION(BlueprintCallable)
 	void HandleGlowEffects();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UStaticMeshComponent> CheckpointMesh;
-
-private:
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<USphereComponent> Sphere;

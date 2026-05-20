@@ -42,6 +42,8 @@ void AAuraCheckpoint::LoadActor_Implementation()
 void AAuraCheckpoint::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
                                       UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	if (!HasAuthority()) return;
+
 	if (OtherActor->Implements<UPlayerInterface>())
 	{
 		bReached = true;
@@ -60,7 +62,10 @@ void AAuraCheckpoint::BeginPlay()
 {
 	Super::BeginPlay();
 
-	Sphere->OnComponentBeginOverlap.AddDynamic(this, &AAuraCheckpoint::OnSphereOverlap);
+	if (bBindCallOverlapCallback)
+	{
+		Sphere->OnComponentBeginOverlap.AddDynamic(this, &AAuraCheckpoint::OnSphereOverlap);
+	}
 }
 
 void AAuraCheckpoint::HandleGlowEffects()
@@ -73,7 +78,10 @@ void AAuraCheckpoint::HandleGlowEffects()
 
 void AAuraCheckpoint::HighLightActor_Implementation()
 {
-	CheckpointMesh->SetRenderCustomDepth(true);
+	if (!bReached)
+	{
+		CheckpointMesh->SetRenderCustomDepth(true);
+	}
 }
 
 void AAuraCheckpoint::UnHighLightActor_Implementation()
