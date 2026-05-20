@@ -149,7 +149,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	USoundBase* DeathSound;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
 	bool bDead = false;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float DeathTime = 5.f;
+
+	FTimerHandle DeathTimer;
+
+	virtual void OnDeathTimerExpired();
 
 	int32 SummonCount = 0;
 

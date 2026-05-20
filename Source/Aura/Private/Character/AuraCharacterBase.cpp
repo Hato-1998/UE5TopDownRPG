@@ -91,6 +91,15 @@ void AAuraCharacterBase::MulticastHandleDeath_Implementation(const FVector& Deat
 	bDead = true;
 
 	OnDeathDelegate.Broadcast(this);
+
+	if (HasAuthority())
+	{
+		GetWorldTimerManager().SetTimer(DeathTimer, this, &AAuraCharacterBase::OnDeathTimerExpired, DeathTime, false);
+	}
+}
+
+void AAuraCharacterBase::OnDeathTimerExpired()
+{
 }
 
 UAnimMontage* AAuraCharacterBase::GetHitReactMontage_Implementation()

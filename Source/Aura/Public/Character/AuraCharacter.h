@@ -57,6 +57,11 @@ public:
 
 	void LoadProgress();
 
+	virtual void Die(const FVector& DeathImpulse) override;
+
+protected:
+	virtual void OnDeathTimerExpired() override;
+
 private:
 
 	UPROPERTY(VisibleAnywhere)

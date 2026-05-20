@@ -42,6 +42,7 @@ void AAuraGameModeBase::SaveSlotData(UMVVMLoadSlot* LoadSlot, int32 SlotIndex)
 
 	LoadScreenSaveGame->PlayerName = LoadSlot->GetPlayerName();
 	LoadScreenSaveGame->MapName = LoadSlot->GetMapName();
+	LoadScreenSaveGame->MapAssetName = DefaultMap.ToSoftObjectPath().GetAssetName();
 	LoadScreenSaveGame->SlotStatus = Taken;
 	LoadScreenSaveGame->PlayerStartTag = LoadSlot->PlayerStartTag;
 
@@ -332,6 +333,25 @@ FString AAuraGameModeBase::GetMapNameFromMapAssetName(const FString& MapAssetNam
 		}
 	}
 	return FString();
+}
+
+void AAuraGameModeBase::PlayerDied(ACharacter* DeadCharacter)
+{
+	ULoadScreenSaveGame* SaveGame = RetrieveInGameSaveData();
+	if (!SaveGame)
+	{
+		UE_LOG(LogAura, Error, TEXT("PlayerDied failed: SaveGame is null"))
+		return;
+	}
+
+	const TSoftObjectPtr<UWorld>* MapToTravel = Maps.Find(GetMapNameFromMapAssetName(SaveGame->MapAssetName));
+	if (!MapToTravel || MapToTravel->IsNull())
+	{
+		UE_LOG(LogAura, Error, TEXT("PlayerDied failed: Map %s is not registered"), *SaveGame->MapAssetName)
+		return;
+	}
+
+	UGameplayStatics::OpenLevelBySoftObjectPtr(DeadCharacter, *MapToTravel);
 }
 
 void AAuraGameModeBase::BeginPlay()

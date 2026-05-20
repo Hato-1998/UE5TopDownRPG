@@ -94,6 +94,22 @@ void AAuraCharacter::LoadProgress()
 	}
 }
 
+void AAuraCharacter::Die(const FVector& DeathImpulse)
+{
+	TopDownCameraComponent->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
+	CameraBoom->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
+
+	Super::Die(DeathImpulse);
+}
+
+void AAuraCharacter::OnDeathTimerExpired()
+{
+	if (AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(this)))
+	{
+		AuraGameMode->PlayerDied(this);
+	}
+}
+
 void AAuraCharacter::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
