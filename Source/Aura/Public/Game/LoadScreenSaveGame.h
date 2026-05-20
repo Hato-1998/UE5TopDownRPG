@@ -55,25 +55,28 @@ struct FSavedAbility
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ClassDefaults")
+	UPROPERTY(BlueprintReadWrite, Category = "SavedAbility")
 	TSubclassOf<UGameplayAbility> GameplayAbility;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, Category = "SavedAbility")
 	FGameplayTag AbilityTag = FGameplayTag();
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, Category = "SavedAbility")
 	FGameplayTag AbilityStatus = FGameplayTag();
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, Category = "SavedAbility")
 	FGameplayTag AbilitySlot = FGameplayTag();
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, Category = "SavedAbility")
 	FGameplayTag AbilityType = FGameplayTag();
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	int32 AbilityLevel;
+	UPROPERTY(BlueprintReadWrite, Category = "SavedAbility")
+	int32 AbilityLevel = 0;
 };
 
+/** AbilityTag 기준 동치성.
+ *  SaveAbilities는 SaveProgress 시 매번 Empty() 후 다시 채우므로
+ *  AddUnique는 동일 어빌리티 중복 등록만 차단하는 용도다. */
 inline bool operator==(const FSavedAbility& Left, const FSavedAbility& Right)
 {
 	return Left.AbilityTag.MatchesTagExact(Right.AbilityTag);
@@ -107,6 +110,9 @@ public:
 	UPROPERTY()
 	TEnumAsByte<ESaveSlotStatus> SlotStatus = Vacant;
 
+	/** 이 슬롯에 대해 SaveProgress가 한 번도 호출되지 않은 초기 상태.
+	 *  true  → 캐릭터 클래스 디폴트 어빌리티/속성 적용 (신규 게임 흐름).
+	 *  false → SaveData에 저장된 어빌리티/속성을 복원. */
 	UPROPERTY()
 	bool bFirstTimeLoadIn = true;
 

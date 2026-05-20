@@ -60,6 +60,7 @@ private:
 	UPROPERTY()
 	TObjectPtr<UMVVMLoadSlot> LoadSlot_2;
 
-	UMVVMLoadSlot* SelectedSlot;
+	UPROPERTY()
+	TObjectPtr<UMVVMLoadSlot> SelectedSlot = nullptr;
 
 };

@@ -6,7 +6,6 @@
 #include "GameFramework/GameModeBase.h"
 #include "AuraGameModeBase.generated.h"
 
-class USaveGame;
 class UMVVMLoadSlot;
 class UAbilityInfo;
 class UCharacterClassInfo;
@@ -30,7 +29,7 @@ public:
 	TObjectPtr<UAbilityInfo> AbilityInfo;
 
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<USaveGame> LoadScreenSaveGameClass;
+	TSubclassOf<ULoadScreenSaveGame> LoadScreenSaveGameClass;
 
 	UPROPERTY(EditDefaultsOnly)
 	FString DefaultMapName;

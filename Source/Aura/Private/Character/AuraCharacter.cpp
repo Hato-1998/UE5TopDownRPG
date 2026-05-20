@@ -219,10 +219,13 @@ void AAuraCharacter::HideMagicCircle_Implementation()
 
 void AAuraCharacter::SaveProgress_Implementation(const FName& CheckpointTag)
 {
-	AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(this));
-	UGameInstance* AuraGameInstance = Cast<UAuraGameInstance>(AuraGameMode->GetGameInstance());
+	if (!HasAuthority()) return;
 
-	if (AuraGameMode && AuraGameInstance)
+	AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(this));
+	if (!AuraGameMode) return;
+
+	UAuraGameInstance* AuraGameInstance = Cast<UAuraGameInstance>(AuraGameMode->GetGameInstance());
+	if (AuraGameInstance)
 	{
 		ULoadScreenSaveGame* SaveData = AuraGameMode->RetrieveInGameSaveData();
 		if (SaveData == nullptr) return;
@@ -244,15 +247,17 @@ void AAuraCharacter::SaveProgress_Implementation(const FName& CheckpointTag)
 
 		SaveData->bFirstTimeLoadIn = false;
 
-		if (!HasAuthority()) return;
-
 		UAuraAbilitySystemComponent* AuraASC = Cast<UAuraAbilitySystemComponent>(AbilitySystemComponent);
+		if (!AuraASC) return;
+
 		FForEachAbility SaveAbilityDelegate;
 		SaveData->SaveAbilities.Empty();
 		SaveAbilityDelegate.BindLambda([this, AuraASC, &SaveData](const FGameplayAbilitySpec& AbilitySpec)
 		{
 			const FGameplayTag AbilityTag = AuraASC->GetAbilityTagFromSpec(AbilitySpec);
 			UAbilityInfo* AbilityInfo = UAuraAbilitySystemLibrary::GetAbilityInfo(this);
+			if (!AbilityInfo) return;
+
 			FAuraAbilityInfo Info = AbilityInfo->FindAbilityInfoForTag(AbilityTag);
 
 			FSavedAbility SavedAbility;
