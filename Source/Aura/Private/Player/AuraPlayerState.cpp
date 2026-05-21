@@ -56,7 +56,7 @@ void AAuraPlayerState::SetLevel(int32 InLevel)
 
 void AAuraPlayerState::AddToLevel(int32 InLevel)
 {
-	if (!HasAuthority()) return;
+	if (!HasAuthority() || InLevel <= 0) return;
 	Level += InLevel;
 	OnLevelChangedDelegate.Broadcast(Level, true);
 }

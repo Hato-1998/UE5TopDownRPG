@@ -64,6 +64,9 @@ protected:
 	virtual void UpdateMovementSpeedFromDebuffs() override;
 	virtual void SetBeingShocked_Implementation(bool bBeingShocked) override;
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void SpawnLoot();
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Class Defaults")
 	int32 Level = 1;
 

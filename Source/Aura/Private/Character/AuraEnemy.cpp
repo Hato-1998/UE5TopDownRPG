@@ -118,6 +118,11 @@ void AAuraEnemy::Die(const FVector& DeathImpulse)
 
 	if (AuraAIController) AuraAIController->GetBlackboardComponent()->SetValueAsBool(AuraBBKeys::Dead, true);
 
+	if (HasAuthority())
+	{
+		SpawnLoot();
+	}
+
 	Super::Die(DeathImpulse);
 }
 

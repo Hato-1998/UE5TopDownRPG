@@ -71,7 +71,7 @@ struct FSavedAbility
 	FGameplayTag AbilityType = FGameplayTag();
 
 	UPROPERTY(BlueprintReadWrite, Category = "SavedAbility")
-	int32 AbilityLevel = 0;
+	int32 AbilityLevel = 1;
 };
 
 /** AbilityTag 기준 동치성.
