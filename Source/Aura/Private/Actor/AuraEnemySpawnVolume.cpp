@@ -22,6 +22,14 @@ AAuraEnemySpawnVolume::AAuraEnemySpawnVolume()
 
 void AAuraEnemySpawnVolume::LoadActor_Implementation()
 {
+	if (bResetOnLoad)
+	{
+		// 리셋 모드: SaveGame에 직렬화된 bReached를 무시하고 매 로드마다 재무장
+		bReached = false;
+		Box->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		return;
+	}
+
 	if (bReached)
 	{
 		Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);

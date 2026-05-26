@@ -6,6 +6,11 @@
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 
+namespace AuraPointCollectionConstants
+{
+	static const FName TraceProfile_BlockAll(TEXT("BlockAll"));
+}
+
 AAuraPointCollection::AAuraPointCollection()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -82,7 +87,7 @@ TArray<USceneComponent*> AAuraPointCollection::GetGroundPoints(const FVector& Gr
 
 		FCollisionQueryParams TraceParams;
 		TraceParams.AddIgnoredActors(IgnoreActors);
-		GetWorld()->LineTraceSingleByProfile(HitResult, RaisedLocation, LoweredLocation, FName("BlockAll"), TraceParams);
+		GetWorld()->LineTraceSingleByProfile(HitResult, RaisedLocation, LoweredLocation, AuraPointCollectionConstants::TraceProfile_BlockAll, TraceParams);
 
 		const FVector AdjustedLocation = FVector(Pt->GetComponentLocation().X, Pt->GetComponentLocation().Y, HitResult.ImpactPoint.Z);
 		Pt->SetWorldLocation(AdjustedLocation);

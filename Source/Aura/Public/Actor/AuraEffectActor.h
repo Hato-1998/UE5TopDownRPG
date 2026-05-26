@@ -34,8 +34,6 @@ public:
 	AAuraEffectActor();
 
 	virtual void BeginPlay() override;
-
-	virtual void Tick(float DeltaTime) override;
 protected:
 	UFUNCTION(BlueprintCallable)
 	void ApplyEffectToTarget(AActor* TargetActor, const TSubclassOf<UGameplayEffect>& GameplayEffectClass);
@@ -112,7 +110,4 @@ protected:
 	float ActorLevel = 1.0f;
 
 private:
-	float RunningTime = 0.f;
-
-	void ItemMovement(float DeltaTime);
 };

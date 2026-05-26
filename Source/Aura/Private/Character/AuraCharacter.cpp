@@ -8,6 +8,7 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "AbilitySystem/AuraAttributeSet.h"
+#include "AbilitySystem/AuraHealthComponent.h"
 #include "AbilitySystem/Data/AbilityInfo.h"
 #include "AbilitySystem/Data/AuraLevelUpInfo.h"
 #include "AbilitySystem/Debuff/AuraDebuffNiagaraComponent.h"
@@ -102,7 +103,7 @@ void AAuraCharacter::Die(const FVector& DeathImpulse)
 	Super::Die(DeathImpulse);
 }
 
-void AAuraCharacter::OnDeathTimerExpired()
+void AAuraCharacter::HandlePlayerDeathFinished(AActor* OwningActor)
 {
 	if (AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(this)))
 	{
@@ -376,5 +377,11 @@ void AAuraCharacter::InitAbilityActorInfo()
 		{
 			AuraHUD->InitOverlay(AuraPlayerController, AuraPlayerState, AbilitySystemComponent, AttributeSet);
 		}
+	}
+
+	if (HealthComponent)
+	{
+		HealthComponent->InitializeWithAbilitySystem(AbilitySystemComponent);
+		HealthComponent->OnDeathFinishedNative.AddUObject(this, &AAuraCharacter::HandlePlayerDeathFinished);
 	}
 }

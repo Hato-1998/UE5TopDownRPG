@@ -5,7 +5,7 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "Kismet/KismetMathLibrary.h"
+#include "Interaction/EnemyInterface.h"
 
 
 AAuraEffectActor::AAuraEffectActor()
@@ -24,18 +24,6 @@ void AAuraEffectActor::BeginPlay()
 	CalculatedRotation = GetActorRotation();
 }
 
-void AAuraEffectActor::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	RunningTime += DeltaTime;
-	const float SinePeriod = 2 * PI / SinePeriodConstant;
-
-	if (RunningTime > SinePeriod) RunningTime = 0;
-
-	ItemMovement(DeltaTime);
-
-}
 
 void AAuraEffectActor::StartSinusoidalMovement()
 {
@@ -50,27 +38,11 @@ void AAuraEffectActor::StartRotation()
 	CalculatedLocation = InitialLocation;
 }
 
-void AAuraEffectActor::ItemMovement(float DeltaTime)
-{
-	if (bRotates)
-	{
-		const FRotator DeltaRotator(0.f, DeltaTime * RotationRate, 0.f);
-
-		CalculatedRotation = UKismetMathLibrary::ComposeRotators(CalculatedRotation, DeltaRotator);
-	}
-
-	if (bSinusoidalMovement)
-	{
-		const float Sine = SineAmplitude * FMath::Sin(RunningTime * SinePeriodConstant);
-
-		CalculatedLocation = InitialLocation + FVector(0.f, 0.f, Sine);
-	}
-}
 
 void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const TSubclassOf<UGameplayEffect>& GameplayEffectClass)
 {
 	if (!TargetActor) return;
-	if (TargetActor->ActorHasTag(FName("Enemy")) && !bApplyEffectsToEnemies) return;
+	if (TargetActor->Implements<UEnemyInterface>() && !bApplyEffectsToEnemies) return;
 
 	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor);
 	if (!IsValid(TargetASC)) return;
@@ -118,7 +90,7 @@ void AAuraEffectActor::ApplyEffectsForPolicy(AActor* TargetActor, EEffectApplica
 void AAuraEffectActor::OnOverlap(AActor* TargetActor)
 {
 	if (!TargetActor) return;
-	if (TargetActor->ActorHasTag(FName("Enemy")) && !bApplyEffectsToEnemies) return;
+	if (TargetActor->Implements<UEnemyInterface>() && !bApplyEffectsToEnemies) return;
 
 	ApplyEffectsForPolicy(TargetActor, EEffectApplicationPolicy::ApplyOnOverlap);
 }
@@ -126,7 +98,7 @@ void AAuraEffectActor::OnOverlap(AActor* TargetActor)
 void AAuraEffectActor::OnEndOverlap(AActor* TargetActor)
 {
 	if (!TargetActor) return;
-	if (TargetActor->ActorHasTag(FName("Enemy")) && !bApplyEffectsToEnemies) return;
+	if (TargetActor->Implements<UEnemyInterface>() && !bApplyEffectsToEnemies) return;
 
 	ApplyEffectsForPolicy(TargetActor, EEffectApplicationPolicy::ApplyOnEndOverlap);
 

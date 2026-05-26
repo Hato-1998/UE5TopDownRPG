@@ -18,6 +18,7 @@ class UMaterialInstance;
 class UMaterialInstanceDynamic;
 class UNiagaraSystem;
 class USoundBase;
+class UAuraHealthComponent;
 
 UCLASS(Abstract)
 class AURA_API AAuraCharacterBase : public ACharacter, public IAbilitySystemInterface, public ICombatInterface
@@ -39,14 +40,13 @@ public:
 	TArray<FTaggedMontage> AttackMontages;
 
 	virtual FOnASCRegistered& GetOnASCRegisteredDelegate() override { return OnAscRegistered; }
-	virtual FOnDeathSignature& GetOnDeathDelegate() override { return OnDeathDelegate; }
+	virtual FOnDeathSignature& GetOnDeathDelegate() override;
 	virtual FOnDamageSignature& GetOnDamageSignature() override { return OnDamageDelegate; }
 
 	FOnASCRegistered OnAscRegistered;
 
-	UPROPERTY(BlueprintAssignable, Category = "GAS|Combat")
-	FOnDeathSignature OnDeathDelegate;
-
+	// FOnDamageSignature는 비-Dynamic 델리게이트라 UPROPERTY 등록 불가.
+	// ExecCalcDamage가 GetOnDamageSignature().AddLambda로 사용 — C++ 직접 바인딩이라 reflection 불필요.
 	FOnDamageSignature OnDamageDelegate;
 
 	UPROPERTY(ReplicatedUsing=OnRep_Stunned, BlueprintReadOnly, Category = "Combat")
@@ -75,7 +75,6 @@ public:
 	                         AController* EventInstigator, AActor* DamageCauser) override;
 
 protected:
-	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginPlay() override;
 	virtual void InitAbilityActorInfo();
 	virtual void UpdateMovementSpeedFromDebuffs();
@@ -149,16 +148,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	USoundBase* DeathSound;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Combat")
-	bool bDead = false;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Combat")
-	float DeathTime = 5.f;
-
-	FTimerHandle DeathTimer;
-
-	virtual void OnDeathTimerExpired();
-
 	int32 SummonCount = 0;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
@@ -169,6 +158,10 @@ protected:
 
 	UPROPERTY(VisibleInstanceOnly)
 	TObjectPtr<UAuraDebuffNiagaraComponent> StunDebuffComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="GAS", meta=(AllowPrivateAccess="true"))
+	TObjectPtr<UAuraHealthComponent> HealthComponent;
+
 private:
 
 	UPROPERTY(EditAnywhere, Category = "Abilities")

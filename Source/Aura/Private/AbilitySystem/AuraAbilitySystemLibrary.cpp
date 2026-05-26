@@ -14,6 +14,8 @@
 #include "Game/AuraGameModeBase.h"
 #include "Game/LoadScreenSaveGame.h"
 #include "Interaction/CombatInterface.h"
+#include "Interaction/EnemyInterface.h"
+#include "Interaction/PlayerInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/AuraPlayerState.h"
 #include "UI/HUD/AuraHUD.h"
@@ -119,6 +121,20 @@ USpellMenuWidgetController* UAuraAbilitySystemLibrary::GetSpellWidgetMenuControl
 	return nullptr;
 }
 
+namespace AuraASLibraryHelpers
+{
+	/** GE 클래스 1개를 ASC에 적용. Spec 생성·소스 오브젝트 부착·적용 패턴 통합. */
+	static void ApplyDefaultEffect(UAbilitySystemComponent* ASC, const AActor* AvatarActor, TSubclassOf<UGameplayEffect> GEClass, float Level)
+	{
+		if (!ASC || !GEClass) return;
+		FGameplayEffectContextHandle Ctx = ASC->MakeEffectContext();
+		Ctx.AddSourceObject(AvatarActor);
+		const FGameplayEffectSpecHandle Spec = ASC->MakeOutgoingSpec(GEClass, Level, Ctx);
+		if (!Spec.IsValid()) return;
+		ASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
+	}
+}
+
 void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* WorldContextObject, ECharacterClass CharacterClass, float Level, UAbilitySystemComponent* ASC)
 {
 	if (!ASC) return;
@@ -128,25 +144,11 @@ void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* World
 	UCharacterClassInfo* CharacterClassInfo = GetCharacterClassInfo(WorldContextObject);
 	if (!CharacterClassInfo) return;
 
-	FCharacterClassDefaultInfo ClassDefaultInfo = CharacterClassInfo->GetClassDefaultInfo(CharacterClass);
+	const FCharacterClassDefaultInfo ClassDefaultInfo = CharacterClassInfo->GetClassDefaultInfo(CharacterClass);
 
-	FGameplayEffectContextHandle PrimaryAttributeContext = ASC->MakeEffectContext();
-	PrimaryAttributeContext.AddSourceObject(AvatarActor);
-	const FGameplayEffectSpecHandle PrimarySpecHandle = ASC->MakeOutgoingSpec(ClassDefaultInfo.PrimaryAttributes, Level, PrimaryAttributeContext);
-	if (!PrimarySpecHandle.IsValid()) return;
-	ASC->ApplyGameplayEffectSpecToSelf(*PrimarySpecHandle.Data.Get());
-
-	FGameplayEffectContextHandle SecondaryAttributeContext = ASC->MakeEffectContext();
-	SecondaryAttributeContext.AddSourceObject(AvatarActor);
-	const FGameplayEffectSpecHandle SecondarySpecHandle = ASC->MakeOutgoingSpec(CharacterClassInfo->SecondaryAttributes, Level, SecondaryAttributeContext);
-	if (!SecondarySpecHandle.IsValid()) return;
-	ASC->ApplyGameplayEffectSpecToSelf(*SecondarySpecHandle.Data.Get());
-
-	FGameplayEffectContextHandle VitalAttributeContext = ASC->MakeEffectContext();
-	VitalAttributeContext.AddSourceObject(AvatarActor);
-	const FGameplayEffectSpecHandle VitalSpecHandle = ASC->MakeOutgoingSpec(CharacterClassInfo->VitalAttributes, Level,VitalAttributeContext);
-	if (!VitalSpecHandle.IsValid()) return;
-	ASC->ApplyGameplayEffectSpecToSelf(*VitalSpecHandle.Data.Get());
+	AuraASLibraryHelpers::ApplyDefaultEffect(ASC, AvatarActor, ClassDefaultInfo.PrimaryAttributes, Level);
+	AuraASLibraryHelpers::ApplyDefaultEffect(ASC, AvatarActor, CharacterClassInfo->SecondaryAttributes, Level);
+	AuraASLibraryHelpers::ApplyDefaultEffect(ASC, AvatarActor, CharacterClassInfo->VitalAttributes, Level);
 }
 
 void UAuraAbilitySystemLibrary::InitializeDefaultAttributesFromSaveData(const UObject* WorldContextObject,
@@ -175,17 +177,8 @@ void UAuraAbilitySystemLibrary::InitializeDefaultAttributesFromSaveData(const UO
 
 	ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 
-	FGameplayEffectContextHandle SecondaryAttributeContext = ASC->MakeEffectContext();
-	SecondaryAttributeContext.AddSourceObject(AvatarActor);
-	const FGameplayEffectSpecHandle SecondarySpecHandle = ASC->MakeOutgoingSpec(CharacterClassInfo->SecondaryAttributes_Infinite, 1.f, SecondaryAttributeContext);
-	if (!SecondarySpecHandle.IsValid()) return;
-	ASC->ApplyGameplayEffectSpecToSelf(*SecondarySpecHandle.Data.Get());
-
-	FGameplayEffectContextHandle VitalAttributeContext = ASC->MakeEffectContext();
-	VitalAttributeContext.AddSourceObject(AvatarActor);
-	const FGameplayEffectSpecHandle VitalSpecHandle = ASC->MakeOutgoingSpec(CharacterClassInfo->VitalAttributes, 1.f,VitalAttributeContext);
-	if (!VitalSpecHandle.IsValid()) return;
-	ASC->ApplyGameplayEffectSpecToSelf(*VitalSpecHandle.Data.Get());
+	AuraASLibraryHelpers::ApplyDefaultEffect(ASC, AvatarActor, CharacterClassInfo->SecondaryAttributes_Infinite, 1.f);
+	AuraASLibraryHelpers::ApplyDefaultEffect(ASC, AvatarActor, CharacterClassInfo->VitalAttributes, 1.f);
 }
 
 void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContextObject, UAbilitySystemComponent* ASC, ECharacterClass CharacterClass)
@@ -606,10 +599,10 @@ bool UAuraAbilitySystemLibrary::IsNotFriend(AActor* FirstActor, AActor* SecondAc
 	}
 
 	// 1. 둘 다 'Player' 태그를 가지고 있는지 확인
-	const bool bBothArePlayers = FirstActor->ActorHasTag(FName("Player")) && SecondActor->ActorHasTag(FName("Player"));
+	const bool bBothArePlayers = FirstActor->Implements<UPlayerInterface>() && SecondActor->Implements<UPlayerInterface>();
 
 	// 2. 둘 다 'Enemy' 태그를 가지고 있는지 확인
-	const bool bBothAreEnemies = FirstActor->ActorHasTag(FName("Enemy")) && SecondActor->ActorHasTag(FName("Enemy"));
+	const bool bBothAreEnemies = FirstActor->Implements<UEnemyInterface>() && SecondActor->Implements<UEnemyInterface>();
 
 	// 3. 둘 다 플레이어이거나 둘 다 적일 때만 아군(false) 반환,
 	// 그 외의 경우(바위, 맵 오브젝트 등 태그가 없는 대상 포함)는 모두 아군이 아님(true) 반환

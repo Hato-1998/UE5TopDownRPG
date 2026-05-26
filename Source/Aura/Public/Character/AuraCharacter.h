@@ -60,7 +60,8 @@ public:
 	virtual void Die(const FVector& DeathImpulse) override;
 
 protected:
-	virtual void OnDeathTimerExpired() override;
+	UFUNCTION()
+	void HandlePlayerDeathFinished(AActor* OwningActor);
 
 private:
 

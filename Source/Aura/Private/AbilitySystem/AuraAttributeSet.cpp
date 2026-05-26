@@ -7,12 +7,13 @@
 #include "AuraAbilityTypes.h"
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
+#include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "Aura/AuraLogChannels.h"
 #include "GameFramework/Character.h"
-#include "GameplayEffectComponents/TargetTagsGameplayEffectComponent.h"
 #include "Interaction/CombatInterface.h"
 #include "Interaction/PlayerInterface.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/Core/PushModel/PushModel.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/AuraPlayerController.h"
 
@@ -53,45 +54,47 @@ void UAuraAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+    FDoRepLifetimeParams SharedParams;
+    SharedParams.bIsPushBased = true;
+    SharedParams.Condition = COND_None;
+    SharedParams.RepNotifyCondition = REPNOTIFY_Always;
+
 	/*
 	* 기본 속성
 	*/
-    DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Resilience, COND_None, REPNOTIFY_Always);
-    DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Strength, COND_None, REPNOTIFY_Always);
-    DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Intelligence, COND_None, REPNOTIFY_Always);
-    DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Vigor, COND_None, REPNOTIFY_Always);
+    DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, Resilience, SharedParams);
+    DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, Strength, SharedParams);
+    DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, Intelligence, SharedParams);
+    DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, Vigor, SharedParams);
 
 	/*
 	 * 서브 속성
 	*/
-
-	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Armor, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, ArmorPenetration, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, BlockChance, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, CriticalHitChance, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, CriticalHitDamage, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, CriticalHitReduction, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, HealthRegeneration, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, ManaRegeneration, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, Armor, SharedParams);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, ArmorPenetration, SharedParams);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, BlockChance, SharedParams);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, CriticalHitChance, SharedParams);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, CriticalHitDamage, SharedParams);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, CriticalHitReduction, SharedParams);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, HealthRegeneration, SharedParams);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, ManaRegeneration, SharedParams);
 
 	/*
 	 * 저항 속성
 	*/
-
-	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, ResFire, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, ResLightning, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, ResArcane, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, ResPhysical, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, ResFire, SharedParams);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, ResLightning, SharedParams);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, ResArcane, SharedParams);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, ResPhysical, SharedParams);
 
 	/*
 	* 상태 속성
 	*/
+    DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, Health, SharedParams);
+    DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, MaxHealth, SharedParams);
 
-    DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Health, COND_None, REPNOTIFY_Always);
-    DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, MaxHealth, COND_None, REPNOTIFY_Always);
-
-    DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Mana, COND_None, REPNOTIFY_Always);
-    DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, MaxMana, COND_None, REPNOTIFY_Always);
+    DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, Mana, SharedParams);
+    DOREPLIFETIME_WITH_PARAMS_FAST(UAuraAttributeSet, MaxMana, SharedParams);
 }
 
 //속성 변경이 시작되기 전에 먼저 호출
@@ -261,9 +264,6 @@ void UAuraAttributeSet::Debuff(const FEffectProperties& Props)
 		return;
 	}
 
-	const float DebuffDamage = UAuraAbilitySystemLibrary::GetDebuffDamage(Props.EffectContext);
-	const float DebuffDuration = UAuraAbilitySystemLibrary::GetDebuffDuration(Props.EffectContext);
-	const float DebuffFrequency = UAuraAbilitySystemLibrary::GetDebuffFrequency(Props.EffectContext);
 	const FGameplayTag* DebuffTag = Tags.DamageTypesToDebuffs.Find(DamageType);
 	if (!DebuffTag || !DebuffTag->IsValid())
 	{
@@ -272,44 +272,38 @@ void UAuraAttributeSet::Debuff(const FEffectProperties& Props)
 		return;
 	}
 
-	FString DebuffName = FString::Printf(TEXT("DynamicDebuff_%s"), *DamageType.ToString());
-	UGameplayEffect* Effect = NewObject<UGameplayEffect>(GetTransientPackageAsObject(), FName(DebuffName));
-
-	Effect->Period = DebuffFrequency;
-	Effect->DurationPolicy = EGameplayEffectDurationType::HasDuration;
-	Effect->DurationMagnitude = FScalableFloat(DebuffDuration);
-
-	UTargetTagsGameplayEffectComponent& TargetTagsComponent =
-		Effect->FindOrAddComponent<UTargetTagsGameplayEffectComponent>();
-	FInheritedTagContainer GrantedTags;
-	GrantedTags.AddTag(*DebuffTag);
-	if (DebuffTag->MatchesTagExact(Tags.Debuff_Stun))
+	const UCharacterClassInfo* CharacterClassInfo = UAuraAbilitySystemLibrary::GetCharacterClassInfo(Props.SourceAvatarActor);
+	if (!CharacterClassInfo)
 	{
-		GrantedTags.AddTag(Tags.Player_Block_CursorTrace);
-		GrantedTags.AddTag(Tags.Player_Block_InputHeld);
-		GrantedTags.AddTag(Tags.Player_Block_InputPressed);
-		GrantedTags.AddTag(Tags.Player_Block_InputReleased);
+		UE_LOG(LogAura, Warning, TEXT("%hs: CharacterClassInfo not available for debuff."), __FUNCTION__);
+		return;
 	}
-	TargetTagsComponent.SetAndApplyTargetTagChanges(GrantedTags);
 
-	// SetStackingType is WITH_EDITOR-only; engine itself wraps direct field access in pragmas.
-	PRAGMA_DISABLE_DEPRECATION_WARNINGS
-	Effect->StackingType = EGameplayEffectStackingType::AggregateBySource;
-	PRAGMA_ENABLE_DEPRECATION_WARNINGS
-	Effect->StackLimitCount = 1;
+	const TSubclassOf<UGameplayEffect>* DebuffGEClass = CharacterClassInfo->DebuffEffectClasses.Find(*DebuffTag);
+	if (!DebuffGEClass || !*DebuffGEClass)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: No DebuffEffectClass mapped for tag %s. Add it to CharacterClassInfo."),
+			__FUNCTION__, *DebuffTag->ToString());
+		return;
+	}
 
-	const int32 Idx = Effect->Modifiers.Num();
-	Effect->Modifiers.Add(FGameplayModifierInfo());
-	FGameplayModifierInfo& ModifierInfo = Effect->Modifiers[Idx];
+	const FGameplayEffectSpecHandle SpecHandle = Props.SourceASC->MakeOutgoingSpec(*DebuffGEClass, 1.f, EffectContext);
+	if (!SpecHandle.IsValid())
+	{
+		return;
+	}
 
-	ModifierInfo.ModifierMagnitude = FScalableFloat(DebuffDamage);
-	ModifierInfo.ModifierOp = EGameplayModOp::Additive;
-	ModifierInfo.Attribute = UAuraAttributeSet::GetIncomingDamageAttribute();
+	const float DebuffDamage = UAuraAbilitySystemLibrary::GetDebuffDamage(Props.EffectContext);
+	const float DebuffDuration = UAuraAbilitySystemLibrary::GetDebuffDuration(Props.EffectContext);
+	// Period(Frequency)는 UGameplayEffect::Period가 FScalableFloat 타입이라 SetByCaller 미지원.
+	// 각 GE_Debuff_* BP의 Period에 고정값(1.0 권장) 설정. 동적 조정이 필요해지면 Custom Calc Class로.
 
-	FGameplayEffectSpec MutableSpec(Effect, EffectContext, 1.f);
+	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, Tags.Debuff_Damage, DebuffDamage);
+	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, Tags.Debuff_Duration, DebuffDuration);
+
 	AuraContext->SetDamageType(MakeShared<FGameplayTag>(DamageType));
 
-	Props.TargetASC->ApplyGameplayEffectSpecToSelf(MutableSpec);
+	Props.TargetASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data);
 }
 
 void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
@@ -409,102 +403,34 @@ void UAuraAttributeSet::SendXPEvent(const FEffectProperties& Props) const
 	}
 }
 
-void UAuraAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Health, OldHealth);
+// ─────────────────────────────────────────────────────────────────────────────
+// OnRep 단축 매크로 — 19개 속성의 RepNotify 구현 보일러플레이트 제거
+// ─────────────────────────────────────────────────────────────────────────────
+#define DEFINE_AURA_ONREP(PropertyName) \
+void UAuraAttributeSet::OnRep_##PropertyName(const FGameplayAttributeData& Old##PropertyName) const \
+{ \
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, PropertyName, Old##PropertyName); \
 }
 
-void UAuraAttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, MaxHealth, OldMaxHealth);
-}
+DEFINE_AURA_ONREP(Health)
+DEFINE_AURA_ONREP(MaxHealth)
+DEFINE_AURA_ONREP(Mana)
+DEFINE_AURA_ONREP(MaxMana)
+DEFINE_AURA_ONREP(Strength)
+DEFINE_AURA_ONREP(Intelligence)
+DEFINE_AURA_ONREP(Resilience)
+DEFINE_AURA_ONREP(Vigor)
+DEFINE_AURA_ONREP(Armor)
+DEFINE_AURA_ONREP(ArmorPenetration)
+DEFINE_AURA_ONREP(BlockChance)
+DEFINE_AURA_ONREP(CriticalHitChance)
+DEFINE_AURA_ONREP(CriticalHitDamage)
+DEFINE_AURA_ONREP(CriticalHitReduction)
+DEFINE_AURA_ONREP(HealthRegeneration)
+DEFINE_AURA_ONREP(ManaRegeneration)
+DEFINE_AURA_ONREP(ResFire)
+DEFINE_AURA_ONREP(ResLightning)
+DEFINE_AURA_ONREP(ResArcane)
+DEFINE_AURA_ONREP(ResPhysical)
 
-void UAuraAttributeSet::OnRep_Mana(const FGameplayAttributeData& OldMana) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Mana, OldMana);
-}
-
-void UAuraAttributeSet::OnRep_MaxMana(const FGameplayAttributeData& OldMaxMana) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, MaxMana, OldMaxMana);
-}
-
-void UAuraAttributeSet::OnRep_Strength(const FGameplayAttributeData& OldStrength) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Strength, OldStrength);
-}
-
-void UAuraAttributeSet::OnRep_Intelligence(const FGameplayAttributeData& OldIntelligence) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Intelligence, OldIntelligence);
-}
-
-void UAuraAttributeSet::OnRep_Resilience(const FGameplayAttributeData& OldResilience) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Resilience, OldResilience);
-}
-
-void UAuraAttributeSet::OnRep_Vigor(const FGameplayAttributeData& OldVigor) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Vigor, OldVigor);
-}
-
-void UAuraAttributeSet::OnRep_Armor(const FGameplayAttributeData& OldArmor) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Armor, OldArmor);
-}
-
-void UAuraAttributeSet::OnRep_ArmorPenetration(const FGameplayAttributeData& OldArmorPenetration) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, ArmorPenetration, OldArmorPenetration);
-}
-
-void UAuraAttributeSet::OnRep_BlockChance(const FGameplayAttributeData& OldBlockChance) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, BlockChance, OldBlockChance);
-}
-
-void UAuraAttributeSet::OnRep_CriticalHitChance(const FGameplayAttributeData& OldCriticalHitChance) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, CriticalHitChance, OldCriticalHitChance);
-}
-
-void UAuraAttributeSet::OnRep_CriticalHitDamage(const FGameplayAttributeData& OldCriticalHitDamage) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, CriticalHitDamage, OldCriticalHitDamage);
-}
-
-void UAuraAttributeSet::OnRep_CriticalHitReduction(const FGameplayAttributeData& OldCriticalHitReduction) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, CriticalHitReduction, OldCriticalHitReduction);
-}
-
-void UAuraAttributeSet::OnRep_HealthRegeneration(const FGameplayAttributeData& OldHealthRegeneration) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, HealthRegeneration, OldHealthRegeneration);
-}
-
-void UAuraAttributeSet::OnRep_ManaRegeneration(const FGameplayAttributeData& OldManaRegeneration) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, ManaRegeneration, OldManaRegeneration);
-}
-
-void UAuraAttributeSet::OnRep_ResFire(const FGameplayAttributeData& OldResFire) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, ResFire, OldResFire);
-}
-
-void UAuraAttributeSet::OnRep_ResLightning(const FGameplayAttributeData& OldResLightning) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, ResLightning, OldResLightning);
-}
-
-void UAuraAttributeSet::OnRep_ResArcane(const FGameplayAttributeData& OldResArcane) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, ResArcane, OldResArcane);
-}
-
-void UAuraAttributeSet::OnRep_ResPhysical(const FGameplayAttributeData& OldResPhysical) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, ResPhysical, OldResPhysical);
-}
+#undef DEFINE_AURA_ONREP

@@ -6,6 +6,7 @@
 #include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "Character/AuraCharacterBase.h"
 #include "Interaction/HighLightInterface.h"
+#include "Interaction/EnemyInterface.h"
 #include "ScalableFloat.h"
 #include "AuraEnemy.generated.h"
 
@@ -20,7 +21,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyAttributeChangedSignature, f
  *
  */
 UCLASS()
-class AURA_API AAuraEnemy : public AAuraCharacterBase, public IHighLightInterface
+class AURA_API AAuraEnemy : public AAuraCharacterBase, public IHighLightInterface, public IEnemyInterface
 {
 	GENERATED_BODY()
 
@@ -35,12 +36,6 @@ public:
 	virtual int32 GetXPReward_Implementation() const override;
 
 	virtual void Die(const FVector& DeathImpulse) override;
-
-	UPROPERTY(BlueprintAssignable)
-	FOnEnemyAttributeChangedSignature OnHealthChanged;
-
-	UPROPERTY(BlueprintAssignable)
-	FOnEnemyAttributeChangedSignature OnMaxHealthChanged;
 
 	void HitReactTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
 
@@ -84,4 +79,7 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<AAuraAIController> AuraAIController;
+
+	UPROPERTY(EditDefaultsOnly, Category="UI")
+	TSubclassOf<class UEnemyHealthBarWidgetController> EnemyHealthBarWidgetControllerClass;
 };

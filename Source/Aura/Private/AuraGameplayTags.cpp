@@ -9,6 +9,12 @@ FAuraGameplayTags FAuraGameplayTags::GameplayTags;
 void FAuraGameplayTags::InitializeNativeGameplayTags()
 {
 	/*
+	 * Parent tags — 자식보다 먼저 등록 (B1 위생)
+	 */
+	GameplayTags.Attribute = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Attribute"), FString("Parent tag for all character attributes"));
+
+	/*
 	 * Primary Attributes
 	 */
 	GameplayTags.Attribute_Primary_Strength = UGameplayTagsManager::Get().AddNativeGameplayTag(
@@ -194,6 +200,9 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	 * Global Tag
 	 */
 
+	GameplayTags.Effects = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Effects"), FString("Parent tag for gameplay effects"));
+
 	GameplayTags.Effects_HitReact = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("Effects.HitReact"), FString("Effects tag for HitReact"));
 
@@ -227,6 +236,9 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	GameplayTags.Abilities_HitReact = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("Abilities.HitReact"), FString("HitReact Abilities Tag"));
 
+	GameplayTags.Abilities_Status = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Abilities.Status"), FString("Parent tag for ability status states"));
+
 	GameplayTags.Abilities_Status_Locked = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("Abilities.Status.Locked"), FString("Locked Abilities Tag"));
 	GameplayTags.Abilities_Status_Eligible = UGameplayTagsManager::Get().AddNativeGameplayTag(
@@ -257,6 +269,8 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	/*
 	 * Cooldown
 	 */
+	GameplayTags.Cooldown = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Cooldown"), FString("Parent tag for cooldown effects"));
 
 	GameplayTags.Cooldown_Fire_FireBolt = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("Cooldown.Fire.FireBolt"), FString("Fire Bolt Cooldown Tag"));
@@ -268,6 +282,8 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	/*
 	* CombatSocket
 	*/
+	GameplayTags.CombatSocket = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("CombatSocket"), FString("Parent tag for combat attachment sockets"));
 
 	GameplayTags.CombatSocket_Weapon = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("CombatSocket.Weapon"), FString("CombatSocket Tag"));
@@ -284,6 +300,8 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	/*
 	 * Montage Tags
 	 */
+	GameplayTags.Montage = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Montage"), FString("Parent tag for animation montages"));
 
 	GameplayTags.Montage_Attack_1 = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("Montage.Attack_1"), FString("Montage Attack Tag"));
@@ -304,6 +322,8 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	/*
 	 * Player Block Tag
 	 */
+	GameplayTags.Player_Block = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Player.Block"), FString("Parent tag for player blocking states"));
 
 	GameplayTags.Player_Block_Input = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Player.Block.Input"), FString("Player Block Input Tag"));
@@ -319,6 +339,9 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	/*
 	 * Gameplay Cue
 	 */
+	GameplayTags.GameplayCue = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("GameplayCue"), FString("Parent tag for gameplay cues"));
+
 	GameplayTags.GameplayCue_FireBlast = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("GameplayCue.FireBlast"), FString("Gameplay Cue for Fire Blast"));
 

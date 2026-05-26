@@ -31,6 +31,16 @@ public:
 	UPROPERTY(SaveGame)
 	bool bReached = false;
 
+	/**
+	 * true면 레벨 재로드 시마다 bReached를 false로 리셋하여 적이 다시 스폰된다 (반복 던전·리스폰 지역용).
+	 * false(기본)면 한 번 트리거된 후 영구 비활성 — 기존 동작.
+	 * 디자이너가 BP 인스턴스마다 조정 가능.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Spawn",
+		meta=(DisplayName="Reset On Load",
+		      ToolTip="If true, this volume rearms on level reload (enemies respawn on revisit). If false, once triggered it stays permanently inactive."))
+	bool bResetOnLoad = false;
+
 protected:
 	virtual void BeginPlay() override;
 
