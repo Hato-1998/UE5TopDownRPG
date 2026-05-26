@@ -13,6 +13,12 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/DamageType.h"
 
+namespace AuraDamageCurveKeys
+{
+	static const FName ArmorPenetration(TEXT("ArmorPenetration"));
+	static const FName EffectiveArmor(TEXT("EffectiveArmor"));
+}
+
 struct AuraDamageStatics
 {
 	DECLARE_ATTRIBUTE_CAPTUREDEF(Armor);
@@ -252,7 +258,7 @@ void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutio
 	else
 	{
 		if (const FRealCurve* ArmorPenetrationCurve =
-			CharacterClassInfo->DamageCalcCurveTable->FindCurve(FName("ArmorPenetration"), FString()))
+			CharacterClassInfo->DamageCalcCurveTable->FindCurve(AuraDamageCurveKeys::ArmorPenetration, FString()))
 		{
 			ArmorPenetrationCoefficient = ArmorPenetrationCurve->Eval(SourcePlayerLevel);
 		}
@@ -263,7 +269,7 @@ void UExecCalcDamage::Execute_Implementation(const FGameplayEffectCustomExecutio
 		}
 
 		if (const FRealCurve* EffectiveArmorCurve =
-			CharacterClassInfo->DamageCalcCurveTable->FindCurve(FName("EffectiveArmor"), FString()))
+			CharacterClassInfo->DamageCalcCurveTable->FindCurve(AuraDamageCurveKeys::EffectiveArmor, FString()))
 		{
 			EffectiveArmorCoefficient = EffectiveArmorCurve->Eval(TargetPlayerLevel);
 		}

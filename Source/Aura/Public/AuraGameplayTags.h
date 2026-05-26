@@ -17,6 +17,18 @@ public:
 	static const FAuraGameplayTags& Get() { return GameplayTags; }
 	static void InitializeNativeGameplayTags();
 
+	/*
+	 * 부모 (Parent) 태그 — 자식보다 먼저 등록되어야 함. MatchesTag 비교 + 에디터 메타데이터용.
+	 */
+	FGameplayTag Attribute;
+	FGameplayTag Effects;
+	FGameplayTag Abilities_Status;
+	FGameplayTag Cooldown;
+	FGameplayTag CombatSocket;
+	FGameplayTag Montage;
+	FGameplayTag Player_Block;
+	FGameplayTag GameplayCue;
+
 	FGameplayTag Attribute_Primary_Strength;
 	FGameplayTag Attribute_Primary_Intelligence;
 	FGameplayTag Attribute_Primary_Resilience;

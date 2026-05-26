@@ -18,6 +18,14 @@ class IHighLightInterface;
 struct FInputActionValue;
 class USplineComponent;
 
+UENUM(BlueprintType)
+enum class ETargetingStatus : uint8
+{
+	TargetingEnemy,
+	TargetingMapEntrance,
+	NotTargeting
+};
+
 UCLASS()
 class AURA_API AAuraPlayerController : public APlayerController
 {
@@ -59,13 +67,16 @@ private:
 	void CursorTrace();
 	void AutoRun();
 
-	TScriptInterface<IHighLightInterface> LastActor;
-	TScriptInterface<IHighLightInterface> ThisActor;
+	TObjectPtr<AActor> LastActor;
+	TObjectPtr<AActor> ThisActor;
 	FHitResult CursorHit;
 
 	void AbilityInputTagPressed(const FGameplayTag Tag);
 	void AbilityInputTagReleased(const FGameplayTag Tag);
 	void AbilityInputTagHeld(const FGameplayTag Tag);
+
+	void HighlightActor(AActor* InActor);
+	void UnHighlightActor(AActor* InActor);
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UAuraInputConfig> InputConfig;
@@ -79,7 +90,7 @@ private:
 	float FollowTime = 0.f;
 	float ShortPressThreshold = 0.2f;
 	bool bAutoRunning = false;
-	bool bTargeting = false;
+	ETargetingStatus TargetingStatus = ETargetingStatus::NotTargeting;
 
 	UPROPERTY(EditDefaultsOnly)
 	float AutoRunAcceptanceRadius = 50.f;

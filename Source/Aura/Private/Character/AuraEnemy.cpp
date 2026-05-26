@@ -8,6 +8,7 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "AbilitySystem/AuraAttributeSet.h"
+#include "AbilitySystem/AuraHealthComponent.h"
 #include "AbilitySystem/Passive/PassiveNiagaraComponent.h"
 #include "AI/AuraAIController.h"
 #include "AI/AuraAIBlackboardKeys.h"
@@ -16,6 +17,7 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "UI/Widget/AuraUserWidget.h"
+#include "UI/Widget/EnemyHealthBarWidgetController.h"
 #include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -39,6 +41,11 @@ AAuraEnemy::AAuraEnemy()
 	HealthBar->SetupAttachment(GetRootComponent());
 
 	BaseWalkSpeed = 250.f;
+
+	GetMesh()->SetCustomDepthStencilValue(CUSTOM_DEPTH_RED);
+	GetMesh()->MarkRenderStateDirty();
+	Weapon->SetCustomDepthStencilValue(CUSTOM_DEPTH_RED);
+	Weapon->MarkRenderStateDirty();
 }
 
 void AAuraEnemy::PossessedBy(AController* NewController)
@@ -83,16 +90,13 @@ void AAuraEnemy::PossessedBy(AController* NewController)
 	BlackboardComp->SetValueAsBool(AuraBBKeys::RangedAttacker, CharacterClass != ECharacterClass::Warrior);
 }
 
-void AAuraEnemy::HighLightActor()
+void AAuraEnemy::HighLightActor_Implementation()
 {
 	GetMesh()->SetRenderCustomDepth(true);
-	GetMesh()->SetCustomDepthStencilValue(CUSTOM_DEPTH_RED);
-
 	Weapon->SetRenderCustomDepth(true);
-	Weapon->SetCustomDepthStencilValue(CUSTOM_DEPTH_RED);
 }
 
-void AAuraEnemy::UnHighLightActor()
+void AAuraEnemy::UnHighLightActor_Implementation()
 {
 	GetMesh()->SetRenderCustomDepth(false);
 
@@ -115,6 +119,11 @@ void AAuraEnemy::Die(const FVector& DeathImpulse)
 	SetLifeSpan(LifeSpan);
 
 	if (AuraAIController) AuraAIController->GetBlackboardComponent()->SetValueAsBool(AuraBBKeys::Dead, true);
+
+	if (HasAuthority())
+	{
+		SpawnLoot();
+	}
 
 	Super::Die(DeathImpulse);
 }
@@ -149,37 +158,32 @@ void AAuraEnemy::InitAbilityActorInfo()
 		UAuraAbilitySystemLibrary::GiveStartupAbilities(this, AbilitySystemComponent, CharacterClass);
 	}
 
-	// HealthBar 위젯에 WidgetController로 자기 자신을 세팅
-	if (UAuraUserWidget* AuraUserWidget = Cast<UAuraUserWidget>(HealthBar->GetUserWidgetObject()))
+	if (HealthComponent)
 	{
-		AuraUserWidget->SetWidgetController(this);
+		HealthComponent->InitializeWithAbilitySystem(AbilitySystemComponent);
 	}
 
-	// ASC 속성 변경 → 델리게이트 바인딩
-	const UAuraAttributeSet* AuraAS = CastChecked<UAuraAttributeSet>(AttributeSet);
-
-	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
-		AuraAS->GetHealthAttribute()).AddLambda(
-		[this](const FOnAttributeChangeData& Data)
+	if (UAuraUserWidget* AuraUserWidget = Cast<UAuraUserWidget>(HealthBar->GetUserWidgetObject()))
+	{
+		if (EnemyHealthBarWidgetControllerClass)
 		{
-			OnHealthChanged.Broadcast(Data.NewValue);
-		});
-
-	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
-		AuraAS->GetMaxHealthAttribute()).AddLambda(
-		[this](const FOnAttributeChangeData& Data)
+			UEnemyHealthBarWidgetController* WC = NewObject<UEnemyHealthBarWidgetController>(this, EnemyHealthBarWidgetControllerClass);
+			WC->SetEnemyHealthComponent(HealthComponent);
+			WC->BindCallbacksToDependencies();
+			AuraUserWidget->SetWidgetController(WC);
+			WC->BroadcastInitialValues();
+		}
+		else
 		{
-			OnMaxHealthChanged.Broadcast(Data.NewValue);
-		});
+			// fallback: 기존처럼 self를 controller로 (BP가 아직 마이그레이션 안 된 경우)
+			AuraUserWidget->SetWidgetController(this);
+		}
+	}
 
 	AbilitySystemComponent->RegisterGameplayTagEvent(FAuraGameplayTags::Get().Effects_HitReact, EGameplayTagEventType::NewOrRemoved).AddUObject(
 		this, &AAuraEnemy::HitReactTagChanged);
 
 	OnAscRegistered.Broadcast(AbilitySystemComponent);
-
-	// 초기값 브로드캐스트
-	OnHealthChanged.Broadcast(AuraAS->GetHealth());
-	OnMaxHealthChanged.Broadcast(AuraAS->GetMaxHealth());
 }
 
 void AAuraEnemy::HitReactTagChanged(const FGameplayTag CallbackTag, int32 NewCount)

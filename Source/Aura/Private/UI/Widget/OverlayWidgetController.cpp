@@ -23,7 +23,7 @@ void UOverlayWidgetController::BroadcastInitialValues()
 
 	const int32 CurrentLevel = GetAuraPS()->GetPlayerLevel();
 	const int32 CurrentXP = GetAuraPS()->GetXP();
-	OnPlayerLevelChangedDelegate.Broadcast(CurrentLevel);
+	OnPlayerLevelChangedDelegate.Broadcast(CurrentLevel, false);
 
 	if (const ULevelUpInfo* LevelUpInfo = GetAuraPS()->GetLevelUpInfo())
 	{
@@ -44,9 +44,9 @@ void UOverlayWidgetController::BindCallbacksToDependencies()
 		});
 
 	GetAuraPS()->OnLevelChangedDelegate.AddLambda(
-		[this](int32 NewLevel)
+		[this](int32 NewLevel, bool bLevelUp)
 		{
-			OnPlayerLevelChangedDelegate.Broadcast(NewLevel);
+			OnPlayerLevelChangedDelegate.Broadcast(NewLevel, bLevelUp);
 
 			// 레벨업 시 XP Bar도 재계산 (새 구간 시작)
 			if (const ULevelUpInfo* LevelUpInfo = GetAuraPS()->GetLevelUpInfo())

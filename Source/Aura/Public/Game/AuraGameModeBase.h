@@ -6,7 +6,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "AuraGameModeBase.generated.h"
 
-class USaveGame;
+class ULootTiers;
 class UMVVMLoadSlot;
 class UAbilityInfo;
 class UCharacterClassInfo;
@@ -15,9 +15,7 @@ class ULoadScreenSaveGame;
 /**
  *
  */
-UCLASS
-
-()
+UCLASS()
 class AURA_API AAuraGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
@@ -31,13 +29,46 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category= "Ability Info")
 	TObjectPtr<UAbilityInfo> AbilityInfo;
 
+	UPROPERTY(EditDefaultsOnly, Category= "Loot Tiers")
+	TObjectPtr<ULootTiers> LootTiers;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<ULoadScreenSaveGame> LoadScreenSaveGameClass;
+
+	UPROPERTY(EditDefaultsOnly)
+	FString DefaultMapName;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSoftObjectPtr<UWorld> DefaultMap;
+
+	UPROPERTY(EditDefaultsOnly)
+	TMap<FString, TSoftObjectPtr<UWorld>> Maps;
+
+	UPROPERTY(EditDefaultsOnly)
+	FName DefaultPlayerStartTag;
+
 	void SaveSlotData(UMVVMLoadSlot* LoadSlot, int32 SlotIndex);
 
 	ULoadScreenSaveGame* GetLoadScreenSaveGame(const FString& SlotName, int32 SlotIndex) const;
 
 	static void DeleteSlot(const FString& SlotName, int32 SlotIndex);
 
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<USaveGame> LoadScreenSaveGameClass;
+	void TravelToMap(UMVVMLoadSlot* Slot);
+
+	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
+
+	ULoadScreenSaveGame* RetrieveInGameSaveData();
+	void SaveInGameSaveData(ULoadScreenSaveGame* SaveData);
+
+	void SaveWorldState(UWorld* World, const FString& DestinationMapAssetName = FString("")) const;
+	void LoadWorldState(UWorld* World) const;
+
+	FString GetMapNameFromMapAssetName(const FString& MapAssetName) const;
+
+	void PlayerDied(ACharacter* DeadCharacter);
+
+
+protected:
+	virtual void BeginPlay() override;
 
 };

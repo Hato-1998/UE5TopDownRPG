@@ -6,6 +6,7 @@
 #include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "Character/AuraCharacterBase.h"
 #include "Interaction/HighLightInterface.h"
+#include "Interaction/EnemyInterface.h"
 #include "ScalableFloat.h"
 #include "AuraEnemy.generated.h"
 
@@ -20,7 +21,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyAttributeChangedSignature, f
  *
  */
 UCLASS()
-class AURA_API AAuraEnemy : public AAuraCharacterBase, public IHighLightInterface
+class AURA_API AAuraEnemy : public AAuraCharacterBase, public IHighLightInterface, public IEnemyInterface
 {
 	GENERATED_BODY()
 
@@ -28,19 +29,13 @@ public:
 	AAuraEnemy();
 	virtual void PossessedBy(AController* NewController) override;
 
-	virtual void HighLightActor() override;
-	virtual void UnHighLightActor() override;
+	virtual void HighLightActor_Implementation() override;
+	virtual void UnHighLightActor_Implementation() override;
 
 	virtual int32 GetPlayerLevel_Implementation() const override;
 	virtual int32 GetXPReward_Implementation() const override;
 
 	virtual void Die(const FVector& DeathImpulse) override;
-
-	UPROPERTY(BlueprintAssignable)
-	FOnEnemyAttributeChangedSignature OnHealthChanged;
-
-	UPROPERTY(BlueprintAssignable)
-	FOnEnemyAttributeChangedSignature OnMaxHealthChanged;
 
 	void HitReactTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
 
@@ -50,6 +45,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
 	float LifeSpan = 5.f;
 
+	UFUNCTION(BlueprintCallable, Category = "Character Class Defaults")
+	void SetLevel(int32 InLevel) { Level = InLevel; }
+
+	UFUNCTION(BlueprintCallable, Category = "Character Class Defaults")
+	void SetCharacterClass(ECharacterClass InClass) { CharacterClass = InClass; }
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void InitAbilityActorInfo() override;
@@ -57,6 +58,9 @@ protected:
 	virtual void StunTagChanged(const FGameplayTag CallBackTag, int32 NewCount) override;
 	virtual void UpdateMovementSpeedFromDebuffs() override;
 	virtual void SetBeingShocked_Implementation(bool bBeingShocked) override;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void SpawnLoot();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Class Defaults")
 	int32 Level = 1;
@@ -75,4 +79,7 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<AAuraAIController> AuraAIController;
+
+	UPROPERTY(EditDefaultsOnly, Category="UI")
+	TSubclassOf<class UEnemyHealthBarWidgetController> EnemyHealthBarWidgetControllerClass;
 };

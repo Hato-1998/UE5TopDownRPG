@@ -7,6 +7,7 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayEffectTypes.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
+#include "AbilitySystem/AuraHealthComponent.h"
 #include "Aura/Aura.h"
 #include "Components/CapsuleComponent.h"
 #include "AuraGameplayTags.h"
@@ -17,9 +18,14 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Net/UnrealNetwork.h"
 
+namespace AuraCharacterBaseConstants
+{
+	static const FName WeaponHandSocket(TEXT("WeaponHandSocket"));
+}
+
 AAuraCharacterBase::AAuraCharacterBase()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	BurnDebuffComponent = CreateDefaultSubobject<UAuraDebuffNiagaraComponent>("BurnDebuffComponent");
 	BurnDebuffComponent->SetupAttachment(GetRootComponent());
@@ -29,6 +35,8 @@ AAuraCharacterBase::AAuraCharacterBase()
 	StunDebuffComponent->SetupAttachment(GetRootComponent());
 	StunDebuffComponent->DebuffTag = FAuraGameplayTags::Get().Debuff_Stun;
 
+	HealthComponent = CreateDefaultSubobject<UAuraHealthComponent>("HealthComponent");
+
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	GetCapsuleComponent()->SetGenerateOverlapEvents(false);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
@@ -36,11 +44,13 @@ AAuraCharacterBase::AAuraCharacterBase()
 	GetMesh()->SetGenerateOverlapEvents(true);
 
 	Weapon = CreateDefaultSubobject<USkeletalMeshComponent>("Weapon");
-	Weapon->SetupAttachment(GetMesh(), FName("WeaponHandSocket"));
+	Weapon->SetupAttachment(GetMesh(), AuraCharacterBaseConstants::WeaponHandSocket);
 	Weapon->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	EffectAttachComponent = CreateDefaultSubobject<USceneComponent>("EffectAttachPoint");
 	EffectAttachComponent->SetupAttachment(GetRootComponent());
+	// SetUsingAbsoluteRotation: 부모 회전 무시 → 기존 Tick에서 매 프레임 SetWorldRotation(0) 강제하던 로직 대체 (Tick 제거)
+	EffectAttachComponent->SetUsingAbsoluteRotation(true);
 
 	HaloOfProtectionNiagaraComponent = CreateDefaultSubobject<UPassiveNiagaraComponent>("HaloOfProtectionNiagaraComponent");
 	HaloOfProtectionNiagaraComponent->SetupAttachment(EffectAttachComponent);
@@ -88,10 +98,11 @@ void AAuraCharacterBase::MulticastHandleDeath_Implementation(const FVector& Deat
 	BurnDebuffComponent->Deactivate();
 	StunDebuffComponent->Deactivate();
 
-	bDead = true;
-
-	OnDeathDelegate.Broadcast(this);
+	// HealthComponent->StartDeath: 모든 클라이언트에서 호출되어야 외부 listener(DebuffNiagara 등)가 모든 머신에서 트리거됨.
+	// StartDeath는 bDead idempotent라 서버에서 Die() 호출 시 중복 호출돼도 안전.
+	HealthComponent->StartDeath(DeathImpulse);
 }
+
 
 UAnimMontage* AAuraCharacterBase::GetHitReactMontage_Implementation()
 {
@@ -111,7 +122,15 @@ void AAuraCharacterBase::SetCombatTarget_Implementation(AActor* InCombatTarget)
 void AAuraCharacterBase::Die(const FVector& DeathImpulse)
 {
 	Weapon->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
+	// HealthComponent->StartDeath는 MulticastHandleDeath_Implementation 안에서 호출됨 (모든 클라이언트 트리거 보장).
 	MulticastHandleDeath(DeathImpulse);
+}
+
+FOnDeathSignature& AAuraCharacterBase::GetOnDeathDelegate()
+{
+	// CombatInterface forward: 외부(AuraBeamSpell·DebuffNiagara)가 GetOnDeathDelegate()로 받는 델리게이트는
+	// 실제로 HealthComponent.OnDeathStarted. 타입이 FOnDeathSignature로 통일돼 있어 호환.
+	return HealthComponent->OnDeathStarted;
 }
 
 void AAuraCharacterBase::StunTagChanged(const FGameplayTag CallBackTag, int32 NewCount)
@@ -143,13 +162,6 @@ void AAuraCharacterBase::OnRep_Burned()
 void AAuraCharacterBase::OnRep_BeingShocked()
 {
 	UpdateMovementSpeedFromDebuffs();
-}
-
-void AAuraCharacterBase::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-
-	EffectAttachComponent->SetWorldRotation(FRotator::ZeroRotator);
 }
 
 void AAuraCharacterBase::BeginPlay()
@@ -221,7 +233,7 @@ FTaggedMontage AAuraCharacterBase::GetTaggedMontageByTag_Implementation(const FG
 
 bool AAuraCharacterBase::IsDead_Implementation() const
 {
-	return bDead;
+	return HealthComponent && HealthComponent->IsDeadOrDying();
 }
 
 AActor* AAuraCharacterBase::GetAvatar_Implementation()
@@ -292,6 +304,9 @@ float AAuraCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& Dam
                                      AController* EventInstigator, AActor* DamageCauser)
 {
 	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	// OnDamageDelegate는 ExecCalcDamage의 RadialDamage 캡처(GetOnDamageSignature().AddLambda)에서 사용 — 유지 필수.
+	// HealthComponent::OnDamageTaken은 신규 BP 노출용.
 	OnDamageDelegate.Broadcast(ActualDamage);
+	HealthComponent->BroadcastDamageTaken(ActualDamage);
 	return ActualDamage;
 }

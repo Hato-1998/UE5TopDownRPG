@@ -5,6 +5,7 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
+#include "Interaction/EnemyInterface.h"
 
 
 AAuraEffectActor::AAuraEffectActor()
@@ -14,10 +15,34 @@ AAuraEffectActor::AAuraEffectActor()
 	SetRootComponent(CreateDefaultSubobject<USceneComponent>("SceneRoot"));
 }
 
+void AAuraEffectActor::BeginPlay()
+{
+	Super::BeginPlay();
+
+	InitialLocation = GetActorLocation();
+	CalculatedLocation = InitialLocation;
+	CalculatedRotation = GetActorRotation();
+}
+
+
+void AAuraEffectActor::StartSinusoidalMovement()
+{
+	bSinusoidalMovement = true;
+	InitialLocation = GetActorLocation();
+}
+
+void AAuraEffectActor::StartRotation()
+{
+	bRotates = true;
+	CalculatedRotation = GetActorRotation();
+	CalculatedLocation = InitialLocation;
+}
+
+
 void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const TSubclassOf<UGameplayEffect>& GameplayEffectClass)
 {
 	if (!TargetActor) return;
-	if (TargetActor->ActorHasTag(FName("Enemy")) && !bApplyEffectsToEnemies) return;
+	if (TargetActor->Implements<UEnemyInterface>() && !bApplyEffectsToEnemies) return;
 
 	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor);
 	if (!IsValid(TargetASC)) return;
@@ -65,7 +90,7 @@ void AAuraEffectActor::ApplyEffectsForPolicy(AActor* TargetActor, EEffectApplica
 void AAuraEffectActor::OnOverlap(AActor* TargetActor)
 {
 	if (!TargetActor) return;
-	if (TargetActor->ActorHasTag(FName("Enemy")) && !bApplyEffectsToEnemies) return;
+	if (TargetActor->Implements<UEnemyInterface>() && !bApplyEffectsToEnemies) return;
 
 	ApplyEffectsForPolicy(TargetActor, EEffectApplicationPolicy::ApplyOnOverlap);
 }
@@ -73,7 +98,7 @@ void AAuraEffectActor::OnOverlap(AActor* TargetActor)
 void AAuraEffectActor::OnEndOverlap(AActor* TargetActor)
 {
 	if (!TargetActor) return;
-	if (TargetActor->ActorHasTag(FName("Enemy")) && !bApplyEffectsToEnemies) return;
+	if (TargetActor->Implements<UEnemyInterface>() && !bApplyEffectsToEnemies) return;
 
 	ApplyEffectsForPolicy(TargetActor, EEffectApplicationPolicy::ApplyOnEndOverlap);
 

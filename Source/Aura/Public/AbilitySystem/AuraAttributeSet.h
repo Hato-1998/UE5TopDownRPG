@@ -14,6 +14,21 @@
 #define ATTRIBUTE_ACCESSORS(ClassName, PropertyName) \
 GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName) \
 GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName) \
+GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName) \
+FORCEINLINE void Set##PropertyName(float NewVal) \
+{ \
+	if (UAbilitySystemComponent* AbilityComp = GetOwningAbilitySystemComponent()) \
+	{ \
+		AbilityComp->SetNumericAttributeBase(Get##PropertyName##Attribute(), NewVal); \
+		MARK_PROPERTY_DIRTY_FROM_NAME(ClassName, PropertyName, this); \
+	} \
+}
+
+// 메타 속성 전용 — 복제되지 않으므로 Push Model MARK 사용하지 않는다.
+// (IncomingDamage, IncomingXp 같이 GetLifetimeReplicatedProps에 등록되지 않는 속성)
+#define ATTRIBUTE_ACCESSORS_META(ClassName, PropertyName) \
+GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName) \
+GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName) \
 GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName) \
 GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)
 
@@ -173,11 +188,11 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Meta Attributes")
 	FGameplayAttributeData IncomingDamage;
-	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, IncomingDamage)
+	ATTRIBUTE_ACCESSORS_META(UAuraAttributeSet, IncomingDamage)
 
 	UPROPERTY(BlueprintReadOnly, Category = "Meta Attributes")
 	FGameplayAttributeData IncomingXp;
-	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, IncomingXp)
+	ATTRIBUTE_ACCESSORS_META(UAuraAttributeSet, IncomingXp)
 
 	/*
 	* 상태 속성
