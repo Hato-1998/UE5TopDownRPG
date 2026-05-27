@@ -5,7 +5,7 @@
 
 #include "Aura/AuraLogChannels.h"
 #include "Components/SphereComponent.h"
-#include "Game/AuraGameModeBase.h"
+#include "Game/AuraSaveGameSubsystem.h"
 #include "Interaction/PlayerInterface.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -38,9 +38,12 @@ void AAuraMapEntrance::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent,
 
 	bReached = true;
 
-	if (AAuraGameModeBase* GameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(this)))
+	if (UGameInstance* GameInstance = GetGameInstance())
 	{
-		GameMode->SaveWorldState(GetWorld(), DestinationMap.ToSoftObjectPath().GetAssetName());
+		if (UAuraSaveGameSubsystem* SaveSubsystem = GameInstance->GetSubsystem<UAuraSaveGameSubsystem>())
+		{
+			SaveSubsystem->SaveWorldState(GetWorld(), DestinationMap.ToSoftObjectPath().GetAssetName());
+		}
 	}
 
 	IPlayerInterface::Execute_SaveProgress(OtherActor, DestinationPlayerStartTag);

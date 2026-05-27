@@ -10,17 +10,17 @@
 
 UOverlayWidgetController* AAuraHUD::GetOverlayWidgetController(const FWidgetControllerParams& WCParams)
 {
-	return GetOrCreateWidgetController(OverlayWidgetController, OverlayWidgetControllerClass, WCParams);
+	return GetOrCreateWidgetController<UOverlayWidgetController>(OverlayWidgetControllerClass, WCParams);
 }
 
 UAttributeWidgetMenuController* AAuraHUD::GetAttributeWidgetMenuController(const FWidgetControllerParams& WCParams)
 {
-	return GetOrCreateWidgetController(AttributeMenuWidgetController, AttributeMenuWidgetControllerClass, WCParams);
+	return GetOrCreateWidgetController<UAttributeWidgetMenuController>(AttributeMenuWidgetControllerClass, WCParams);
 }
 
 USpellMenuWidgetController* AAuraHUD::GetSpellWidgetMenuController(const FWidgetControllerParams& WCParams)
 {
-	return GetOrCreateWidgetController(SpellMenuWidgetController, SpellMenuWidgetControllerClass, WCParams);
+	return GetOrCreateWidgetController<USpellMenuWidgetController>(SpellMenuWidgetControllerClass, WCParams);
 }
 
 void AAuraHUD::InitOverlay(APlayerController* PC, APlayerState* PS, UAbilitySystemComponent* ASC, UAttributeSet* AS)

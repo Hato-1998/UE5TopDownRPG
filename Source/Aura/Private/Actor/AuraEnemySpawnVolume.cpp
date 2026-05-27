@@ -5,9 +5,8 @@
 
 #include "Actor/AuraEnemySpawnPoint.h"
 #include "Components/BoxComponent.h"
-#include "Game/AuraGameModeBase.h"
+#include "Game/AuraSaveGameSubsystem.h"
 #include "Interaction/PlayerInterface.h"
-#include "Kismet/GameplayStatics.h"
 
 AAuraEnemySpawnVolume::AAuraEnemySpawnVolume()
 {
@@ -36,6 +35,12 @@ void AAuraEnemySpawnVolume::LoadActor_Implementation()
 	}
 }
 
+void AAuraEnemySpawnVolume::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+	EnsureSaveId();
+}
+
 void AAuraEnemySpawnVolume::BeginPlay()
 {
 	Super::BeginPlay();
@@ -60,10 +65,27 @@ void AAuraEnemySpawnVolume::OnBoxOverlap(UPrimitiveComponent* OverlappedComponen
 		}
 	}
 
-	if (AAuraGameModeBase* GameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(this)))
+	if (UGameInstance* GameInstance = GetGameInstance())
 	{
-		GameMode->SaveWorldState(GetWorld());
+		if (UAuraSaveGameSubsystem* SaveSubsystem = GameInstance->GetSubsystem<UAuraSaveGameSubsystem>())
+		{
+			SaveSubsystem->SaveWorldState(GetWorld());
+		}
 	}
 
 	Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
+void AAuraEnemySpawnVolume::EnsureSaveId()
+{
+	if (SaveId.IsValid())
+	{
+		return;
+	}
+
+	SaveId = FGuid::NewGuid();
+#if WITH_EDITOR
+	Modify();
+	MarkPackageDirty();
+#endif
 }

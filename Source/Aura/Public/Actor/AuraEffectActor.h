@@ -34,6 +34,10 @@ public:
 	AAuraEffectActor();
 
 	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintCallable, Category = "Applied Effects")
+	void SetActorLevel(float InActorLevel) { ActorLevel = InActorLevel; }
+
 protected:
 	UFUNCTION(BlueprintCallable)
 	void ApplyEffectToTarget(AActor* TargetActor, const TSubclassOf<UGameplayEffect>& GameplayEffectClass);
@@ -46,6 +50,7 @@ protected:
 
 	/** 주어진 정책에 해당하는 모든 Effect를 대상 Actor에 적용하는 헬퍼 함수 */
 	void ApplyEffectsForPolicy(AActor* TargetActor, EEffectApplicationPolicy PolicyToMatch);
+	bool CanApplyEffectsToTarget(const AActor* TargetActor) const;
 
 	UPROPERTY(BlueprintReadWrite)
 	FVector CalculatedLocation;
@@ -104,7 +109,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Applied Effects")
 	EEffectRemovePolicy InfinityEffectRemovePolicy = EEffectRemovePolicy::DoNotRemove;
 
-	TMap<FActiveGameplayEffectHandle, UAbilitySystemComponent*> ActiveEffectHandles;
+	TMap<FActiveGameplayEffectHandle, TWeakObjectPtr<UAbilitySystemComponent>> ActiveEffectHandles;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Applied Effects")
 	float ActorLevel = 1.0f;

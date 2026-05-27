@@ -7,19 +7,15 @@
 #include "NiagaraComponent.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
-#include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/AuraHealthComponent.h"
-#include "AbilitySystem/Data/AbilityInfo.h"
 #include "AbilitySystem/Data/AuraLevelUpInfo.h"
 #include "AbilitySystem/Debuff/AuraDebuffNiagaraComponent.h"
 #include "AbilitySystem/Passive/PassiveNiagaraComponent.h"
 #include "Camera/CameraComponent.h"
-#include "Game/AuraGameInstance.h"
-#include "Game/AuraGameModeBase.h"
+#include "Game/AuraSaveGameSubsystem.h"
 #include "Game/LoadScreenSaveGame.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "Kismet/GameplayStatics.h"
 #include "Player/AuraPlayerController.h"
 #include "Player/AuraPlayerState.h"
 #include "UI/HUD/AuraHUD.h"
@@ -56,17 +52,23 @@ void AAuraCharacter::PossessedBy(AController* NewController)
 	InitAbilityActorInfo();
 	LoadProgress();
 
-	if (AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(this)))
+	if (UGameInstance* GameInstance = GetGameInstance())
 	{
-		AuraGameMode->LoadWorldState(GetWorld());
+		if (UAuraSaveGameSubsystem* SaveSubsystem = GameInstance->GetSubsystem<UAuraSaveGameSubsystem>())
+		{
+			SaveSubsystem->LoadWorldState(GetWorld());
+		}
 	}
 }
 
 void AAuraCharacter::LoadProgress()
 {
-	if (AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(this)))
+	if (UGameInstance* GameInstance = GetGameInstance())
 	{
-		ULoadScreenSaveGame* SaveData = AuraGameMode->RetrieveInGameSaveData();
+		UAuraSaveGameSubsystem* SaveSubsystem = GameInstance->GetSubsystem<UAuraSaveGameSubsystem>();
+		if (!SaveSubsystem) return;
+
+		ULoadScreenSaveGame* SaveData = SaveSubsystem->RetrieveInGameSaveData();
 		if (SaveData == nullptr) return;
 
 		if (SaveData->bFirstTimeLoadIn)
@@ -105,9 +107,12 @@ void AAuraCharacter::Die(const FVector& DeathImpulse)
 
 void AAuraCharacter::HandlePlayerDeathFinished(AActor* OwningActor)
 {
-	if (AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(this)))
+	if (UGameInstance* GameInstance = GetGameInstance())
 	{
-		AuraGameMode->PlayerDied(this);
+		if (UAuraSaveGameSubsystem* SaveSubsystem = GameInstance->GetSubsystem<UAuraSaveGameSubsystem>())
+		{
+			SaveSubsystem->HandlePlayerDeath(this);
+		}
 	}
 }
 
@@ -238,59 +243,12 @@ void AAuraCharacter::SaveProgress_Implementation(const FName& CheckpointTag)
 {
 	if (!HasAuthority()) return;
 
-	AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(this));
-	if (!AuraGameMode) return;
-
-	UAuraGameInstance* AuraGameInstance = Cast<UAuraGameInstance>(AuraGameMode->GetGameInstance());
-	if (AuraGameInstance)
+	if (UGameInstance* GameInstance = GetGameInstance())
 	{
-		ULoadScreenSaveGame* SaveData = AuraGameMode->RetrieveInGameSaveData();
-		if (SaveData == nullptr) return;
-
-		SaveData->PlayerStartTag = CheckpointTag;
-
-		if (AAuraPlayerState* AuraPlayerState = Cast<AAuraPlayerState>(GetPlayerState()))
+		if (UAuraSaveGameSubsystem* SaveSubsystem = GameInstance->GetSubsystem<UAuraSaveGameSubsystem>())
 		{
-			SaveData->PlayerLevel = AuraPlayerState->GetPlayerLevel();
-			SaveData->PlayerXP = AuraPlayerState->GetXP();
-			SaveData->AttributePoints = AuraPlayerState->GetAttributePoints();
-			SaveData->SpellPoints = AuraPlayerState->GetSpellPoints();
+			SaveSubsystem->SavePlayerProgress(this, CheckpointTag);
 		}
-
-		SaveData->Strength = UAuraAttributeSet::GetStrengthAttribute().GetNumericValue(GetAttributeSet());
-		SaveData->Intelligence = UAuraAttributeSet::GetIntelligenceAttribute().GetNumericValue(GetAttributeSet());
-		SaveData->Resilience = UAuraAttributeSet::GetResilienceAttribute().GetNumericValue(GetAttributeSet());
-		SaveData->Vigor = UAuraAttributeSet::GetVigorAttribute().GetNumericValue(GetAttributeSet());
-
-		SaveData->bFirstTimeLoadIn = false;
-
-		UAuraAbilitySystemComponent* AuraASC = Cast<UAuraAbilitySystemComponent>(AbilitySystemComponent);
-		if (!AuraASC) return;
-
-		FForEachAbility SaveAbilityDelegate;
-		SaveData->SaveAbilities.Empty();
-		SaveAbilityDelegate.BindLambda([this, AuraASC, &SaveData](const FGameplayAbilitySpec& AbilitySpec)
-		{
-			const FGameplayTag AbilityTag = AuraASC->GetAbilityTagFromSpec(AbilitySpec);
-			UAbilityInfo* AbilityInfo = UAuraAbilitySystemLibrary::GetAbilityInfo(this);
-			if (!AbilityInfo) return;
-
-			FAuraAbilityInfo Info = AbilityInfo->FindAbilityInfoForTag(AbilityTag);
-
-			FSavedAbility SavedAbility;
-			SavedAbility.GameplayAbility = Info.Ability;
-			SavedAbility.AbilityLevel = AbilitySpec.Level;
-			SavedAbility.AbilitySlot = AuraASC->GetSlotFromAbilityTag(AbilityTag);
-			SavedAbility.AbilityStatus = AuraASC->GetStatusFromAbilityTag(AbilityTag);
-			SavedAbility.AbilityTag = AbilityTag;
-			SavedAbility.AbilityType = Info.AbilityType;
-
-			SaveData->SaveAbilities.AddUnique(SavedAbility);
-		});
-
-		AuraASC->ForEachAbility(SaveAbilityDelegate);
-
-		AuraGameMode->SaveInGameSaveData(SaveData);
 	}
 }
 

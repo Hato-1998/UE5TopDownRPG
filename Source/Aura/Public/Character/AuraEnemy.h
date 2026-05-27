@@ -59,8 +59,11 @@ protected:
 	virtual void UpdateMovementSpeedFromDebuffs() override;
 	virtual void SetBeingShocked_Implementation(bool bBeingShocked) override;
 
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintNativeEvent, Category = "Loot")
 	void SpawnLoot();
+	virtual void SpawnLoot_Implementation();
+
+	FVector GetLootSpawnLocation() const;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Class Defaults")
 	int32 Level = 1;
@@ -70,6 +73,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Class Defaults")
 	FScalableFloat XPReward;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Loot", meta = (ClampMin = "0.0"))
+	float LootSpawnRadius = 75.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Loot")
+	float LootSpawnZOffset = 30.f;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UWidgetComponent> HealthBar;

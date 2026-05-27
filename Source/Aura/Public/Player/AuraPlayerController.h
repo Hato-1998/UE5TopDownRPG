@@ -8,15 +8,17 @@
 #include "AuraPlayerController.generated.h"
 
 class AAuraMagicCircle;
+class UAuraClickMovementComponent;
+class UAuraCursorTargetingComponent;
+class UAuraDamageNumberComponent;
+class UAuraMagicCircleComponent;
 class UNiagaraSystem;
 class UDamageTextComponent;
 class UAuraAbilitySystemComponent;
 class UAuraInputConfig;
 class UInputMappingContext;
 class UInputAction;
-class IHighLightInterface;
 struct FInputActionValue;
-class USplineComponent;
 
 UENUM(BlueprintType)
 enum class ETargetingStatus : uint8
@@ -63,20 +65,13 @@ private:
 	bool bShiftKeyDown = false;
 
 	void Move(const FInputActionValue& InputActionValue);
+	void GetCameraRelativeMovementDirections(FVector& OutForwardDirection, FVector& OutRightDirection) const;
 
 	void CursorTrace();
-	void AutoRun();
-
-	TObjectPtr<AActor> LastActor;
-	TObjectPtr<AActor> ThisActor;
-	FHitResult CursorHit;
 
 	void AbilityInputTagPressed(const FGameplayTag Tag);
 	void AbilityInputTagReleased(const FGameplayTag Tag);
 	void AbilityInputTagHeld(const FGameplayTag Tag);
-
-	void HighlightActor(AActor* InActor);
-	void UnHighlightActor(AActor* InActor);
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UAuraInputConfig> InputConfig;
@@ -85,18 +80,21 @@ private:
 	TObjectPtr<UAuraAbilitySystemComponent> AuraAbilitySystemComponent;
 
 	UAuraAbilitySystemComponent* GetAuraASC();
+	bool IsInputBlocked(const FGameplayTag& BlockTag);
 
-	FVector CachedDestination = FVector::ZeroVector;
-	float FollowTime = 0.f;
-	float ShortPressThreshold = 0.2f;
-	bool bAutoRunning = false;
 	ETargetingStatus TargetingStatus = ETargetingStatus::NotTargeting;
 
-	UPROPERTY(EditDefaultsOnly)
-	float AutoRunAcceptanceRadius = 50.f;
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UAuraCursorTargetingComponent> CursorTargetingComponent;
 
 	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<USplineComponent> Spline;
+	TObjectPtr<UAuraClickMovementComponent> ClickMovementComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UAuraMagicCircleComponent> MagicCircleComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UAuraDamageNumberComponent> DamageNumberComponent;
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UDamageTextComponent> DamageTextComponentClass;
@@ -106,9 +104,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AAuraMagicCircle> AuraMagicCircleClass;
-
-	UPROPERTY()
-	TObjectPtr<AAuraMagicCircle> MagicCircle;
 
 	void UpdateMagicCircleLocation();
 };

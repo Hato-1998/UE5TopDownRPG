@@ -4,10 +4,12 @@
 #include "Character/AuraEnemy.h"
 
 #include "AuraGameplayTags.h"
+#include "Actor/AuraEffectActor.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "AbilitySystem/AuraAttributeSet.h"
+#include "AbilitySystem/Data/LootTiers.h"
 #include "AbilitySystem/AuraHealthComponent.h"
 #include "AbilitySystem/Passive/PassiveNiagaraComponent.h"
 #include "AI/AuraAIController.h"
@@ -122,10 +124,59 @@ void AAuraEnemy::Die(const FVector& DeathImpulse)
 
 	if (HasAuthority())
 	{
-		SpawnLoot();
+		SpawnLoot_Implementation();
 	}
 
 	Super::Die(DeathImpulse);
+}
+
+void AAuraEnemy::SpawnLoot_Implementation()
+{
+	if (!HasAuthority()) return;
+
+	ULootTiers* LootTiers = UAuraAbilitySystemLibrary::GetLootTiers(this);
+	if (!LootTiers)
+	{
+		UE_LOG(LogAura, Warning, TEXT("%hs: LootTiers is not configured for %s."), __FUNCTION__, *GetNameSafe(this));
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	const TArray<FLootItem> LootItems = LootTiers->GetLootItems();
+	for (const FLootItem& LootItem : LootItems)
+	{
+		if (!LootItem.LootClass) continue;
+
+		const FTransform SpawnTransform(GetActorRotation(), GetLootSpawnLocation());
+		AActor* LootActor = World->SpawnActorDeferred<AActor>(
+			LootItem.LootClass,
+			SpawnTransform,
+			nullptr,
+			nullptr,
+			ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+
+		if (!IsValid(LootActor)) continue;
+
+		if (LootItem.bLootLevelOverride)
+		{
+			if (AAuraEffectActor* AuraEffectActor = Cast<AAuraEffectActor>(LootActor))
+			{
+				AuraEffectActor->SetActorLevel(Level);
+			}
+		}
+
+		LootActor->FinishSpawning(SpawnTransform);
+	}
+}
+
+FVector AAuraEnemy::GetLootSpawnLocation() const
+{
+	const float Angle = FMath::FRandRange(0.f, 2.f * UE_PI);
+	const float Radius = FMath::Sqrt(FMath::FRand()) * LootSpawnRadius;
+	const FVector Offset(FMath::Cos(Angle) * Radius, FMath::Sin(Angle) * Radius, LootSpawnZOffset);
+	return GetActorLocation() + Offset;
 }
 
 void AAuraEnemy::BeginPlay()

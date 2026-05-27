@@ -20,8 +20,10 @@ class AURA_API AAuraCheckpoint : public APlayerStart, public ISaveInterface, pub
 public:
 	AAuraCheckpoint(const FObjectInitializer& ObjectInitializer);
 
+	virtual FGuid GetSaveId_Implementation() const override { return SaveId; }
 	virtual bool ShouldLoadTransform_Implementation() override { return false;};
 	virtual void LoadActor_Implementation() override;
+	virtual void OnConstruction(const FTransform& Transform) override;
 
 	virtual void HighLightActor_Implementation() override;
 	virtual void UnHighLightActor_Implementation() override;
@@ -32,6 +34,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	bool bBindCallOverlapCallback = true;
+
+	UPROPERTY(EditInstanceOnly, Category="Aura|Save")
+	FGuid SaveId;
 
 protected:
 	UFUNCTION()
@@ -50,6 +55,8 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void HandleGlowEffects();
+
+	void EnsureSaveId();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UStaticMeshComponent> CheckpointMesh;

@@ -25,6 +25,9 @@ class AURA_API ISaveInterface
 public:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "SaveInterface")
+	FGuid GetSaveId() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "SaveInterface")
 	bool ShouldLoadTransform();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "SaveInterface")

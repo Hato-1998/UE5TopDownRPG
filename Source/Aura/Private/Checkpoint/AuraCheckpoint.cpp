@@ -4,9 +4,8 @@
 #include "Checkpoint/AuraCheckpoint.h"
 
 #include "Components/SphereComponent.h"
-#include "Game/AuraGameModeBase.h"
+#include "Game/AuraSaveGameSubsystem.h"
 #include "Interaction/PlayerInterface.h"
-#include "Kismet/GameplayStatics.h"
 #include "Aura/Aura.h"
 
 AAuraCheckpoint::AAuraCheckpoint(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -39,6 +38,12 @@ void AAuraCheckpoint::LoadActor_Implementation()
 	}
 }
 
+void AAuraCheckpoint::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+	EnsureSaveId();
+}
+
 void AAuraCheckpoint::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
                                       UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -48,11 +53,14 @@ void AAuraCheckpoint::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
 	{
 		bReached = true;
 
-		if (AAuraGameModeBase* GameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(this)))
+		if (UGameInstance* GameInstance = GetGameInstance())
 		{
-			FString CurrentMapAssetName = GetWorld()->GetMapName();
-			CurrentMapAssetName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);
-			GameMode->SaveWorldState(GetWorld(), CurrentMapAssetName);
+			if (UAuraSaveGameSubsystem* SaveSubsystem = GameInstance->GetSubsystem<UAuraSaveGameSubsystem>())
+			{
+				FString CurrentMapAssetName = GetWorld()->GetMapName();
+				CurrentMapAssetName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);
+				SaveSubsystem->SaveWorldState(GetWorld(), CurrentMapAssetName);
+			}
 		}
 
 		IPlayerInterface::Execute_SaveProgress(OtherActor, PlayerStartTag);
@@ -76,6 +84,20 @@ void AAuraCheckpoint::HandleGlowEffects()
 	UMaterialInstanceDynamic* DynamicMaterialInstance = UMaterialInstanceDynamic::Create(CheckpointMesh->GetMaterial(0), this);
 	CheckpointMesh->SetMaterial(0, DynamicMaterialInstance);
 	CheckpointReached(DynamicMaterialInstance);
+}
+
+void AAuraCheckpoint::EnsureSaveId()
+{
+	if (SaveId.IsValid())
+	{
+		return;
+	}
+
+	SaveId = FGuid::NewGuid();
+#if WITH_EDITOR
+	Modify();
+	MarkPackageDirty();
+#endif
 }
 
 void AAuraCheckpoint::HighLightActor_Implementation()

@@ -5,26 +5,28 @@
 
 FSavedMap ULoadScreenSaveGame::GetSavedMapWithMapName(const FString& InMapName)
 {
-	for (const FSavedMap& SavedMap : SavedMaps)
+	if (const FSavedMap* SavedMap = FindSavedMapWithMapName(InMapName))
 	{
-		if (SavedMap.MapAssetName == InMapName)
-		{
-			return SavedMap;
-		}
+		return *SavedMap;
 	}
 
 	return FSavedMap();
 }
 
-bool ULoadScreenSaveGame::HasMap(const FString& InMapName)
+const FSavedMap* ULoadScreenSaveGame::FindSavedMapWithMapName(const FString& InMapName) const
 {
 	for (const FSavedMap& SavedMap : SavedMaps)
 	{
 		if (SavedMap.MapAssetName == InMapName)
 		{
-			return true;
+			return &SavedMap;
 		}
 	}
 
-	return false;
+	return nullptr;
+}
+
+bool ULoadScreenSaveGame::HasMap(const FString& InMapName)
+{
+	return FindSavedMapWithMapName(InMapName) != nullptr;
 }

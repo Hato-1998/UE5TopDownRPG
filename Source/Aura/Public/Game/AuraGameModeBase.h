@@ -7,7 +7,6 @@
 #include "AuraGameModeBase.generated.h"
 
 class ULootTiers;
-class UMVVMLoadSlot;
 class UAbilityInfo;
 class UCharacterClassInfo;
 class ULoadScreenSaveGame;
@@ -47,26 +46,7 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	FName DefaultPlayerStartTag;
 
-	void SaveSlotData(UMVVMLoadSlot* LoadSlot, int32 SlotIndex);
-
-	ULoadScreenSaveGame* GetLoadScreenSaveGame(const FString& SlotName, int32 SlotIndex) const;
-
-	static void DeleteSlot(const FString& SlotName, int32 SlotIndex);
-
-	void TravelToMap(UMVVMLoadSlot* Slot);
-
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
-
-	ULoadScreenSaveGame* RetrieveInGameSaveData();
-	void SaveInGameSaveData(ULoadScreenSaveGame* SaveData);
-
-	void SaveWorldState(UWorld* World, const FString& DestinationMapAssetName = FString("")) const;
-	void LoadWorldState(UWorld* World) const;
-
-	FString GetMapNameFromMapAssetName(const FString& MapAssetName) const;
-
-	void PlayerDied(ACharacter* DeadCharacter);
-
 
 protected:
 	virtual void BeginPlay() override;

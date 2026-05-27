@@ -11,7 +11,7 @@
 #include "Engine/OverlapResult.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
-#include "Game/AuraGameModeBase.h"
+#include "Game/AuraGameDataSubsystem.h"
 #include "Game/LoadScreenSaveGame.h"
 #include "Interaction/CombatInterface.h"
 #include "Interaction/EnemyInterface.h"
@@ -123,6 +123,24 @@ USpellMenuWidgetController* UAuraAbilitySystemLibrary::GetSpellWidgetMenuControl
 
 namespace AuraASLibraryHelpers
 {
+	static UAuraGameDataSubsystem* GetGameDataSubsystem(const UObject* WorldContextObject)
+	{
+		if (!GEngine || !WorldContextObject)
+		{
+			return nullptr;
+		}
+
+		if (UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull))
+		{
+			if (UGameInstance* GameInstance = World->GetGameInstance())
+			{
+				return GameInstance->GetSubsystem<UAuraGameDataSubsystem>();
+			}
+		}
+
+		return nullptr;
+	}
+
 	/** GE 클래스 1개를 ASC에 적용. Spec 생성·소스 오브젝트 부착·적용 패턴 통합. */
 	static void ApplyDefaultEffect(UAbilitySystemComponent* ASC, const AActor* AvatarActor, TSubclassOf<UGameplayEffect> GEClass, float Level)
 	{
@@ -212,26 +230,32 @@ void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContext
 
 UCharacterClassInfo* UAuraAbilitySystemLibrary::GetCharacterClassInfo(const UObject* WorldContextObject)
 {
-	const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
-	if (AuraGameMode == nullptr) return nullptr;
+	if (UAuraGameDataSubsystem* GameDataSubsystem = AuraASLibraryHelpers::GetGameDataSubsystem(WorldContextObject))
+	{
+		return GameDataSubsystem->GetCharacterClassInfo();
+	}
 
-	return AuraGameMode->CharacterClassInfo;
+	return nullptr;
 }
 
 UAbilityInfo* UAuraAbilitySystemLibrary::GetAbilityInfo(const UObject* WorldContextObject)
 {
-	const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
-	if (AuraGameMode == nullptr) return nullptr;
+	if (UAuraGameDataSubsystem* GameDataSubsystem = AuraASLibraryHelpers::GetGameDataSubsystem(WorldContextObject))
+	{
+		return GameDataSubsystem->GetAbilityInfo();
+	}
 
-	return AuraGameMode->AbilityInfo;
+	return nullptr;
 }
 
 ULootTiers* UAuraAbilitySystemLibrary::GetLootTiers(const UObject* WorldContextObject)
 {
-	const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
-	if (AuraGameMode == nullptr) return nullptr;
+	if (UAuraGameDataSubsystem* GameDataSubsystem = AuraASLibraryHelpers::GetGameDataSubsystem(WorldContextObject))
+	{
+		return GameDataSubsystem->GetLootTiers();
+	}
 
-	return AuraGameMode->LootTiers;
+	return nullptr;
 }
 
 FGameplayEffectContextHandle UAuraAbilitySystemLibrary::ApplyGameplayEffect(FDamageEffectParams Params)

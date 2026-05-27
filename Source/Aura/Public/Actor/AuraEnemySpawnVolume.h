@@ -18,14 +18,19 @@ class AURA_API AAuraEnemySpawnVolume : public AActor, public ISaveInterface
 public:
 	AAuraEnemySpawnVolume();
 
+	virtual FGuid GetSaveId_Implementation() const override { return SaveId; }
 	virtual bool ShouldLoadTransform_Implementation() override { return false; }
 	virtual void LoadActor_Implementation() override;
+	virtual void OnConstruction(const FTransform& Transform) override;
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UBoxComponent> Box;
 
 	UPROPERTY(EditAnywhere)
 	TArray<TObjectPtr<AAuraEnemySpawnPoint>> SpawnPoints;
+
+	UPROPERTY(EditInstanceOnly, Category="Aura|Save")
+	FGuid SaveId;
 
 	/** 한 번 트리거된 볼륨은 재로드 시 재소환되지 않도록 SaveGame 직렬화 */
 	UPROPERTY(SaveGame)
@@ -43,6 +48,8 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
+	void EnsureSaveId();
 
 	UFUNCTION()
 	void OnBoxOverlap(

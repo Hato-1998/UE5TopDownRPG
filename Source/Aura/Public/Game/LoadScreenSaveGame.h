@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "Game/AuraSaveDefaults.h"
 #include "GameFramework/SaveGame.h"
 #include "LoadScreenSaveGame.generated.h"
 
@@ -26,6 +27,9 @@ struct FSavedActor
 	FName ActorName = FName();
 
 	UPROPERTY()
+	FGuid SaveId;
+
+	UPROPERTY()
 	FTransform Transform = FTransform();
 
 	UPROPERTY()
@@ -35,6 +39,11 @@ struct FSavedActor
 
 inline bool operator==(const FSavedActor& Left, const FSavedActor& Right)
 {
+	if (Left.SaveId.IsValid() && Right.SaveId.IsValid())
+	{
+		return Left.SaveId == Right.SaveId;
+	}
+
 	return Left.ActorName == Right.ActorName;
 }
 
@@ -99,16 +108,16 @@ public:
 	int32 SlotIndex = 0;
 
 	UPROPERTY()
-	FString PlayerName = FString("Default Player Name");
+	FString PlayerName = FString(AuraSaveDefaults::DefaultPlayerName);
 
 	UPROPERTY()
-	FString MapName = FString("Default Map Name");
+	FString MapName = FString(AuraSaveDefaults::DefaultMapName);
 
 	UPROPERTY()
-	FString MapAssetName = FString("Default Asset Map Name");
+	FString MapAssetName = FString(AuraSaveDefaults::DefaultMapAssetName);
 
 	UPROPERTY()
-	FName PlayerStartTag = FName("DefaultPlayerStart");
+	FName PlayerStartTag = FName(AuraSaveDefaults::DefaultPlayerStartTag);
 
 	UPROPERTY()
 	TEnumAsByte<ESaveSlotStatus> SlotStatus = Vacant;
@@ -152,6 +161,7 @@ public:
 	TArray<FSavedMap> SavedMaps;
 
 	FSavedMap GetSavedMapWithMapName(const FString& InMapName);
+	const FSavedMap* FindSavedMapWithMapName(const FString& InMapName) const;
 	bool HasMap(const FString& InMapName);
 
 };

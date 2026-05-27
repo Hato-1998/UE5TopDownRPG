@@ -5,27 +5,25 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AuraGameplayTags.h"
-#include "Interaction/HighLightInterface.h"
 #include "Interaction/CombatInterface.h"
 #include "EnhancedInputSubsystems.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "Components/SplineComponent.h"
 #include "Input/AuraInputComponent.h"
-#include "NavigationSystem.h"
-#include "NavigationPath.h"
-#include "NiagaraFunctionLibrary.h"
-#include "NiagaraSystem.h"
-#include "Actor/AuraMagicCircle.h"
-#include "Aura/Aura.h"
-#include "Components/DecalComponent.h"
+#include "Camera/PlayerCameraManager.h"
 #include "GameFramework/Character.h"
-#include "UI/Widget/DamageTextComponent.h"
+#include "Player/AuraClickMovementComponent.h"
+#include "Player/AuraCursorTargetingComponent.h"
+#include "Player/AuraDamageNumberComponent.h"
+#include "Player/AuraMagicCircleComponent.h"
 
 AAuraPlayerController::AAuraPlayerController()
 {
 	bReplicates = true;
 
-	Spline = CreateDefaultSubobject<USplineComponent>("Spline");
+	CursorTargetingComponent = CreateDefaultSubobject<UAuraCursorTargetingComponent>("CursorTargetingComponent");
+	ClickMovementComponent = CreateDefaultSubobject<UAuraClickMovementComponent>("ClickMovementComponent");
+	MagicCircleComponent = CreateDefaultSubobject<UAuraMagicCircleComponent>("MagicCircleComponent");
+	DamageNumberComponent = CreateDefaultSubobject<UAuraDamageNumberComponent>("DamageNumberComponent");
 }
 
 void AAuraPlayerController::PlayerTick(float DeltaTime)
@@ -35,41 +33,26 @@ void AAuraPlayerController::PlayerTick(float DeltaTime)
 
 	CursorTrace();
 	UpdateMagicCircleLocation();
-	AutoRun();
+	ClickMovementComponent->TickAutoRun(GetPawn<APawn>());
 }
 
 void AAuraPlayerController::ShowMagicCircle(UMaterialInterface* DecalMaterial)
 {
-	if (!IsValid(MagicCircle))
-	{
-		MagicCircle = GetWorld()->SpawnActor<AAuraMagicCircle>(AuraMagicCircleClass);
-
-		if (DecalMaterial)
-		{
-			MagicCircle->MagicCircleDecal->SetMaterial(0, DecalMaterial);
-		}
-	}
+	MagicCircleComponent->ShowMagicCircle(AuraMagicCircleClass, DecalMaterial);
 }
 
 void AAuraPlayerController::HideMagicCircle()
 {
-	if (IsValid(MagicCircle))
-	{
-		MagicCircle->Destroy();
-	}
+	MagicCircleComponent->HideMagicCircle();
 }
 
 void AAuraPlayerController::ShowDamageNumber_Implementation(float DamageAmount, ACharacter* TargetCharacter, bool bBlockedHit, bool bCriticalHit)
 {
-	if (IsValid(TargetCharacter) && DamageTextComponentClass && IsLocalController())
+	if (IsLocalController())
 	{
-		UDamageTextComponent* DamageText = NewObject<UDamageTextComponent>(TargetCharacter, DamageTextComponentClass);
-		DamageText->RegisterComponent();
-		DamageText->AttachToComponent(TargetCharacter->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-		DamageText->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-		DamageText->SetDamageText(DamageAmount, bBlockedHit, bCriticalHit);
+		DamageNumberComponent->ShowDamageNumber(
+			DamageTextComponentClass, DamageAmount, TargetCharacter, bBlockedHit, bCriticalHit);
 	}
-
 }
 
 void AAuraPlayerController::BeginPlay()
@@ -114,16 +97,14 @@ void AAuraPlayerController::SetupInputComponent()
 
 void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 {
-	if (GetAuraASC() && GetAuraASC()->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Block_InputPressed)) return;
+	if (IsInputBlocked(FAuraGameplayTags::Get().Player_Block_InputPressed)) return;
 
-	bAutoRunning = false;
+	ClickMovementComponent->StopAutoRun();
 
 	const FVector2D InputAxisVector = InputActionValue.Get<FVector2D>();
-	const FRotator Rotation = GetControlRotation();
-	const FRotator YawRotation = FRotator(0, Rotation.Yaw, 0);
-
-	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	FVector ForwardDirection;
+	FVector RightDirection;
+	GetCameraRelativeMovementDirections(ForwardDirection, RightDirection);
 
 	if (APawn* ControlledPawn = GetPawn<APawn>())
 	{
@@ -132,64 +113,35 @@ void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 	}
 }
 
-void AAuraPlayerController::HighlightActor(AActor* InActor)
+void AAuraPlayerController::GetCameraRelativeMovementDirections(FVector& OutForwardDirection, FVector& OutRightDirection) const
 {
-	if (IsValid(InActor) && InActor->Implements<UHighLightInterface>())
-	{
-		IHighLightInterface::Execute_HighLightActor(InActor);
-	}
-}
+	const FRotator CameraRotation = PlayerCameraManager ? PlayerCameraManager->GetCameraRotation() : FRotator::ZeroRotator;
 
-void AAuraPlayerController::UnHighlightActor(AActor* InActor)
-{
-	if (IsValid(InActor) && InActor->Implements<UHighLightInterface>())
-	{
-		IHighLightInterface::Execute_UnHighLightActor(InActor);
-	}
+	OutForwardDirection = FRotationMatrix(FRotator(0.f, CameraRotation.Yaw, 0.f)).GetUnitAxis(EAxis::X);
+	OutRightDirection = FRotationMatrix(FRotator(0.f, CameraRotation.Yaw, 0.f)).GetUnitAxis(EAxis::Y);
 }
 
 void AAuraPlayerController::CursorTrace()
 {
-	if (GetAuraASC() && GetAuraASC()->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Block_CursorTrace))
+	if (IsInputBlocked(FAuraGameplayTags::Get().Player_Block_CursorTrace))
 	{
-		UnHighlightActor(LastActor);
-		UnHighlightActor(ThisActor);
-		LastActor = nullptr;
-		ThisActor = nullptr;
+		CursorTargetingComponent->ClearHighlightedActors();
 		return;
 	}
 
-	const ECollisionChannel TraceChannel = IsValid(MagicCircle) ? ECC_ExcludePlayers : ECC_Visibility;
-	GetHitResultUnderCursor(TraceChannel, false, CursorHit);
-	if (!CursorHit.bBlockingHit) return;
-
-	LastActor = ThisActor;
-	AActor* HitActor = CursorHit.GetActor();
-	if (IsValid(HitActor) && HitActor->Implements<UHighLightInterface>())
-	{
-		ThisActor = HitActor;
-	}
-	else
-	{
-		ThisActor = nullptr;
-	}
-
-	if (LastActor != ThisActor)
-	{
-		UnHighlightActor(LastActor);
-		HighlightActor(ThisActor);
-	}
+	CursorTargetingComponent->TraceCursor(MagicCircleComponent->IsShowingMagicCircle());
 }
 
 void AAuraPlayerController::AbilityInputTagPressed(const FGameplayTag Tag)
 {
-	if (GetAuraASC() && GetAuraASC()->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Block_InputPressed)) return;
+	if (IsInputBlocked(FAuraGameplayTags::Get().Player_Block_InputPressed)) return;
 
 	if (Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_RMB))
 	{
-		if (IsValid(ThisActor))
+		AActor* TargetActor = CursorTargetingComponent->GetTargetActor();
+		if (IsValid(TargetActor))
 		{
-			TargetingStatus = ThisActor->Implements<UCombatInterface>()
+			TargetingStatus = TargetActor->Implements<UCombatInterface>()
 				? ETargetingStatus::TargetingEnemy
 				: ETargetingStatus::TargetingMapEntrance;
 		}
@@ -197,112 +149,74 @@ void AAuraPlayerController::AbilityInputTagPressed(const FGameplayTag Tag)
 		{
 			TargetingStatus = ETargetingStatus::NotTargeting;
 		}
-		bAutoRunning = false;
+		ClickMovementComponent->StopAutoRun();
 	}
 
-	if (GetAuraASC()) GetAuraASC()->AbilityInputTagPressed(Tag);
+	if (UAuraAbilitySystemComponent* AuraASC = GetAuraASC())
+	{
+		AuraASC->AbilityInputTagPressed(Tag);
+	}
 }
 
 void AAuraPlayerController::AbilityInputTagReleased(const FGameplayTag Tag)
 {
-	if (GetAuraASC() && GetAuraASC()->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Block_InputReleased)) return;
+	if (IsInputBlocked(FAuraGameplayTags::Get().Player_Block_InputReleased)) return;
 
 	if (!Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_RMB))
 	{
-		if (GetAuraASC()) GetAuraASC()->AbilityInputTagReleased(Tag);
+		if (UAuraAbilitySystemComponent* AuraASC = GetAuraASC())
+		{
+			AuraASC->AbilityInputTagReleased(Tag);
+		}
 		return;
 	}
 
-	if (GetAuraASC()) GetAuraASC()->AbilityInputTagReleased(Tag);
+	if (UAuraAbilitySystemComponent* AuraASC = GetAuraASC())
+	{
+		AuraASC->AbilityInputTagReleased(Tag);
+	}
 
 	if (TargetingStatus != ETargetingStatus::TargetingEnemy && !bShiftKeyDown)
 	{
-		const APawn* ControlledPawn = GetPawn<APawn>();
-		if (FollowTime <= ShortPressThreshold && ControlledPawn)
-		{
-			if (UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(
-				this, ControlledPawn->GetActorLocation(), CachedDestination))
-			{
-				Spline->ClearSplinePoints();
-				const TArray<FVector>& PathPoints = NavPath->PathPoints;
-				for (const auto& PointLoc : PathPoints)
-				{
-					Spline->AddSplinePoint(PointLoc, ESplineCoordinateSpace::World);
-				}
-				if (PathPoints.Num() > 0)
-				{
-					CachedDestination = PathPoints[PathPoints.Num() - 1];
-					bAutoRunning = true;
-				}
-			}
-
-			if (!ThisActor && GetAuraASC() && !GetAuraASC()->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Block_InputReleased))
-			{
-				UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ClickNiagaraSystem, CachedDestination);
-			}
-
-		}
-		FollowTime = 0.f;
+		ClickMovementComponent->UpdateCachedDestination(
+			CursorTargetingComponent->GetCursorHit(), CursorTargetingComponent);
+		UAuraAbilitySystemComponent* AuraASC = GetAuraASC();
+		const bool bSpawnClickEffect =
+			!CursorTargetingComponent->GetTargetActor() &&
+			AuraASC &&
+			!AuraASC->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Block_InputReleased);
+		ClickMovementComponent->TryStartAutoRun(this, GetPawn<APawn>(), bSpawnClickEffect, ClickNiagaraSystem);
+		ClickMovementComponent->ResetFollowTime();
 		TargetingStatus = ETargetingStatus::NotTargeting;
 	}
 }
 
 void AAuraPlayerController::AbilityInputTagHeld(const FGameplayTag Tag)
 {
-	if (GetAuraASC() && GetAuraASC()->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Block_InputHeld)) return;
+	if (IsInputBlocked(FAuraGameplayTags::Get().Player_Block_InputHeld)) return;
 
 	if (!Tag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_RMB))
 	{
-		if (GetAuraASC()) GetAuraASC()->AbilityInputTagHeld(Tag);
+		if (UAuraAbilitySystemComponent* AuraASC = GetAuraASC())
+		{
+			AuraASC->AbilityInputTagHeld(Tag);
+		}
 		return;
 	}
 
 	if (TargetingStatus == ETargetingStatus::TargetingEnemy || bShiftKeyDown)
 	{
-		if (GetAuraASC()) GetAuraASC()->AbilityInputTagHeld(Tag);
+		if (UAuraAbilitySystemComponent* AuraASC = GetAuraASC())
+		{
+			AuraASC->AbilityInputTagHeld(Tag);
+		}
 	}
 	else
 	{
-		FollowTime += GetWorld()->GetDeltaSeconds();
-
-		if (CursorHit.bBlockingHit)
-		{
-			CachedDestination = CursorHit.ImpactPoint;
-			if (IsValid(ThisActor) && ThisActor->Implements<UHighLightInterface>())
-			{
-				IHighLightInterface::Execute_SetMoveToLocation(ThisActor, CachedDestination);
-			}
-		}
-
-		if (APawn* ControllerPawn = GetPawn<APawn>())
-		{
-			const FVector WorldDirection = (CachedDestination - ControllerPawn->GetActorLocation()).GetSafeNormal();
-			ControllerPawn->AddMovementInput(WorldDirection);
-		}
-	}
-}
-
-void AAuraPlayerController::AutoRun()
-{
-	if (!bAutoRunning) return;
-	if (APawn* ControlledPawn = GetPawn<APawn>())
-	{
-		const FVector LocationOnSpline =
-			Spline->FindLocationClosestToWorldLocation(
-				ControlledPawn->GetActorLocation(), ESplineCoordinateSpace::World);
-
-		const FVector Direction =
-			Spline->FindDirectionClosestToWorldLocation(
-				LocationOnSpline, ESplineCoordinateSpace::World);
-
-		ControlledPawn->AddMovementInput(Direction);
-
-		const float DistanceToDestination = (LocationOnSpline - CachedDestination).Length();
-
-		if (DistanceToDestination <= AutoRunAcceptanceRadius)
-		{
-			bAutoRunning = false;
-		}
+		ClickMovementComponent->AddFollowTime(GetWorld()->GetDeltaSeconds());
+		ClickMovementComponent->UpdateCachedDestination(
+			CursorTargetingComponent->GetCursorHit(), CursorTargetingComponent);
+		ClickMovementComponent->MoveTowardCachedDestination(GetPawn<APawn>());
 	}
 }
 
@@ -316,10 +230,13 @@ UAuraAbilitySystemComponent* AAuraPlayerController::GetAuraASC()
 	return AuraAbilitySystemComponent;
 }
 
+bool AAuraPlayerController::IsInputBlocked(const FGameplayTag& BlockTag)
+{
+	UAuraAbilitySystemComponent* AuraASC = GetAuraASC();
+	return AuraASC && AuraASC->HasMatchingGameplayTag(BlockTag);
+}
+
 void AAuraPlayerController::UpdateMagicCircleLocation()
 {
-	if (IsValid(MagicCircle))
-	{
-		MagicCircle->SetActorLocation(CursorHit.ImpactPoint);
-	}
+	MagicCircleComponent->UpdateMagicCircleLocation(CursorTargetingComponent->GetCursorHit());
 }

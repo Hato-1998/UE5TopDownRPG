@@ -41,8 +41,7 @@ void AAuraEffectActor::StartRotation()
 
 void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const TSubclassOf<UGameplayEffect>& GameplayEffectClass)
 {
-	if (!TargetActor) return;
-	if (TargetActor->Implements<UEnemyInterface>() && !bApplyEffectsToEnemies) return;
+	if (!CanApplyEffectsToTarget(TargetActor)) return;
 
 	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor);
 	if (!IsValid(TargetASC)) return;
@@ -71,6 +70,8 @@ void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const TSubclassO
 
 void AAuraEffectActor::ApplyEffectsForPolicy(AActor* TargetActor, EEffectApplicationPolicy PolicyToMatch)
 {
+	if (!CanApplyEffectsToTarget(TargetActor)) return;
+
 	if (InstantEffectApplicationPolicy == PolicyToMatch)
 	{
 		ApplyEffectToTarget(TargetActor, InstantGamePlayEffectClass);
@@ -87,18 +88,20 @@ void AAuraEffectActor::ApplyEffectsForPolicy(AActor* TargetActor, EEffectApplica
 	}
 }
 
+bool AAuraEffectActor::CanApplyEffectsToTarget(const AActor* TargetActor) const
+{
+	if (!IsValid(TargetActor)) return false;
+	return bApplyEffectsToEnemies || !TargetActor->Implements<UEnemyInterface>();
+}
+
 void AAuraEffectActor::OnOverlap(AActor* TargetActor)
 {
-	if (!TargetActor) return;
-	if (TargetActor->Implements<UEnemyInterface>() && !bApplyEffectsToEnemies) return;
-
 	ApplyEffectsForPolicy(TargetActor, EEffectApplicationPolicy::ApplyOnOverlap);
 }
 
 void AAuraEffectActor::OnEndOverlap(AActor* TargetActor)
 {
-	if (!TargetActor) return;
-	if (TargetActor->Implements<UEnemyInterface>() && !bApplyEffectsToEnemies) return;
+	if (!CanApplyEffectsToTarget(TargetActor)) return;
 
 	ApplyEffectsForPolicy(TargetActor, EEffectApplicationPolicy::ApplyOnEndOverlap);
 
@@ -108,9 +111,15 @@ void AAuraEffectActor::OnEndOverlap(AActor* TargetActor)
 		if (!IsValid(TargetASC)) return;
 
 		TArray<FActiveGameplayEffectHandle> HandlesToRemove;
-		for (TTuple<FActiveGameplayEffectHandle, UAbilitySystemComponent*> HandlePair : ActiveEffectHandles)
+		for (const TTuple<FActiveGameplayEffectHandle, TWeakObjectPtr<UAbilitySystemComponent>>& HandlePair : ActiveEffectHandles)
 		{
-			if (TargetASC == HandlePair.Value)
+			if (!HandlePair.Value.IsValid())
+			{
+				HandlesToRemove.Add(HandlePair.Key);
+				continue;
+			}
+
+			if (TargetASC == HandlePair.Value.Get())
 			{
 				TargetASC->RemoveActiveGameplayEffect(HandlePair.Key, 1);
 				HandlesToRemove.Add(HandlePair.Key);

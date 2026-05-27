@@ -10,6 +10,7 @@ class USpellMenuWidgetController;
 class UAttributeSet;
 class UAbilitySystemComponent;
 class UAuraUserWidget;
+class UAuraWidgetController;
 class UOverlayWidgetController;
 class UAttributeWidgetMenuController;
 struct FWidgetControllerParams;
@@ -34,17 +35,28 @@ protected:
 
 private:
 
+	/**
+	 * 통합 캐싱: 동일 컨트롤러 클래스는 한 번만 NewObject. 신규 컨트롤러 타입 추가 시
+	 * wrapper 메서드 1줄 + 클래스 변수 1개만 늘어남 (D1 일원화).
+	 */
 	template<typename T>
-	T* GetOrCreateWidgetController(TObjectPtr<T>& WidgetController, TSubclassOf<T> WidgetControllerClass, const FWidgetControllerParams& WCParams)
+	T* GetOrCreateWidgetController(TSubclassOf<T> WidgetControllerClass, const FWidgetControllerParams& WCParams)
 	{
-		if (WidgetController == nullptr)
+		if (!WidgetControllerClass) return nullptr;
+		if (TObjectPtr<UAuraWidgetController>* Found = WidgetControllers.Find(WidgetControllerClass))
 		{
-			WidgetController = NewObject<T>(this, WidgetControllerClass);
-			WidgetController->SetWidgetControllerParms(WCParams);
-			WidgetController->BindCallbacksToDependencies();
+			return Cast<T>(Found->Get());
 		}
-		return WidgetController;
+		T* NewController = NewObject<T>(this, WidgetControllerClass);
+		NewController->SetWidgetControllerParms(WCParams);
+		NewController->BindCallbacksToDependencies();
+		WidgetControllers.Add(WidgetControllerClass, NewController);
+		return NewController;
 	}
+
+	/** 컨트롤러 인스턴스 캐시. Key=class, Value=instance. UObject GC 보호용 UPROPERTY. */
+	UPROPERTY()
+	TMap<TSubclassOf<UAuraWidgetController>, TObjectPtr<UAuraWidgetController>> WidgetControllers;
 
 	UPROPERTY()
 	TObjectPtr<UAuraUserWidget> OverlayWidget;
@@ -52,20 +64,11 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UAuraUserWidget> OverlayWidgetClass;
 
-	UPROPERTY()
-	TObjectPtr<UOverlayWidgetController> OverlayWidgetController;
-
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UOverlayWidgetController> OverlayWidgetControllerClass;
 
-	UPROPERTY()
-	TObjectPtr<UAttributeWidgetMenuController> AttributeMenuWidgetController;
-
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UAttributeWidgetMenuController> AttributeMenuWidgetControllerClass;
-
-	UPROPERTY()
-	TObjectPtr<USpellMenuWidgetController> SpellMenuWidgetController;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<USpellMenuWidgetController> SpellMenuWidgetControllerClass;
